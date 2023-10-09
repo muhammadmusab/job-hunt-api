@@ -1,0 +1,52 @@
+// Margins
+@include generateResponsiveClasses(ms, margin-left, $spacers-with-auto);
+@include generateResponsiveClasses(me, margin-right, $spacers-with-auto);
+@include generateResponsiveClasses(mt, margin-top, $spacers-with-auto);
+@include generateResponsiveClasses(mb, margin-bottom, $spacers-with-auto);
+@include generateResponsiveClasses(mx, margin-inline, $spacers-with-auto);
+@include generateResponsiveClasses(my, margin-block, $spacers-with-auto);
+@include generateResponsiveClasses(m, margin, $spacers-with-auto);
+
+// Paddings
+@include generateResponsiveClasses(ps, padding-left, $spacers-with-auto);
+@include generateResponsiveClasses(pe, padding-right, $spacers-with-auto);
+@include generateResponsiveClasses(pt, padding-top, $spacers-with-auto);
+@include generateResponsiveClasses(pb, padding-bottom, $spacers-with-auto);
+@include generateResponsiveClasses(px, padding-inline, $spacers-with-auto);
+@include generateResponsiveClasses(py, padding-block, $spacers-with-auto);
+@include generateResponsiveClasses(p, padding, $spacers-with-auto);
+
+$positions: (
+  'absolute': absolute ,'relative': relative,'fixed':fixed
+);
+
+@include generateResponsiveClasses(position, position, $positions);
+
+// Layout properties
+@include generateResponsiveClasses(d, display, flex, '', flex);
+@include generateResponsiveClasses(d, display, block, '', block);
+@include generateResponsiveClasses(d, display, none, '', none);
+@include generateResponsiveClasses(justify-content, justify-content, center, '', center);
+@include generateResponsiveClasses(justify-content, justify-content, space-between, '', between);
+@include generateResponsiveClasses(justify-content, justify-content, start, '', start);
+@include generateResponsiveClasses(align-items, align-items, center, '', center);
+
+
+@include generateResponsiveClasses(text, text-align, center, '', center);
+
+@each $key,$color in $theme-colors{
+  .text-#{$key}{
+    color: $color !important;
+  }
+  .bg-#{$key}{
+    background-color: $color !important;
+  }
+}
+
+@for $i from 1 through 100 {
+  .w-#{$i}{
+    width: #{$i} + '%' !important;
+  }
+
+}
+

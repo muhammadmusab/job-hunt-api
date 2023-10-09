@@ -1,0 +1,5 @@
+@each $name, $size in $headings {
+  .#{$name} {
+    font-size: $size;
+  }
+}

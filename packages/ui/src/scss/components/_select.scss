@@ -1,0 +1,87 @@
+.select {
+  &__trigger {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: $select-trigger-border-radius;
+    padding: $select-trigger-padding-y $select-trigger-padding-x;
+    font-size: $select-trigger-font-size;
+    background-color: $select-trigger-bg;
+    color: $select-trigger-color;
+    box-shadow: $select-trigger-box-shadow;
+    border: $select-trigger-border;
+
+    &:hover {
+      background-color: $select-trigger-hover-bg;
+    }
+    &:focus {
+      box-shadow: $select-trigger-focus-box-shadow;
+    }
+    &[data-placeholder] {
+      color: $select-trigger-placeholder-color;
+    }
+    &.is-invalid {
+      border-color: $input-invalid-border-color;
+    }
+  }
+  &__icon {
+    color: $select-icon-color;
+  }
+  &__content {
+    overflow: hidden;
+    background-color: $select-content-bg;
+    border-radius: $select-content-border-radius;
+    box-shadow: $select-content-box-shadow;
+    border: $select-content-border;
+  }
+  &__viewport {
+    padding: $select-viewport-padding-x $select-viewport-padding-y;
+  }
+  &__item {
+    font-size: $select-item-font-size;
+    color: $select-item-color;
+    border-radius: $select-trigger-border-radius;
+    display: flex;
+    align-items: center;
+    padding: $select-item-padding-y $select-item-padding-x;
+    position: relative;
+    user-select: none;
+
+    &[data-disabled] {
+      color: $select-item-disabled-color;
+      pointer-events: none;
+    }
+    &[data-highlighted] {
+      outline: none;
+      background-color: $select-item-highlighted-bg;
+      color: $select-item-highlighted-color;
+    }
+  }
+  &__label {
+    padding: $select-item-padding-y $select-item-padding-x;
+    font-size: $select-label-font-size;
+    color: $select-label-color;
+  }
+  &__separator {
+    height: $select-seperator-height;
+    background-color: $select-seperator-bg;
+    margin: $select-seperator-margin;
+    &__item {
+      position: absolute;
+      left: 0;
+      width: $select-seperator-width;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+  &__scroll-button {
+    @include flex-center;
+    height: $select-scroll-btn-height;
+    background-color: $select-scroll-btn-bg;
+    color: $select-scroll-btn-color;
+    cursor: default;
+  }
+
+}

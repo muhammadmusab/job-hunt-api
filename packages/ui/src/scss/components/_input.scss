@@ -1,0 +1,21 @@
+.form-control{
+    padding: $input-padding-y $input-padding-x;
+    border-radius:$input-border-radius;
+    box-shadow:$input-box-shadow;
+    border: $input-border;
+    width:100%;
+    display: block;
+
+    &::placeholder{
+        color:$input-placeholder-color;
+        font-family: $body-font-family;
+    }
+    &.is-invalid{
+        border-color: $input-invalid-border-color;
+    }
+    &:focus{
+        box-shadow: $input-focus-box-shadow;
+    }
+}
+
+

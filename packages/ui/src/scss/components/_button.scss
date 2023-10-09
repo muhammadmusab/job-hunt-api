@@ -1,0 +1,104 @@
+.btn {
+  display: inline-block;
+  padding: $btn-padding-y $btn-padding-x;
+  font-family: $btn-font-family;
+  @include clamp(font-size, $min-font-size, $clamp-scalar, $btn-font-size);
+  font-weight: $btn-font-weight;
+  line-height: $btn-line-height;
+  color: $body-color;
+  text-align: $btn-text-align;
+  white-space: $btn-white-space;
+  vertical-align: middle;
+  cursor: pointer;
+  user-select: none;
+  border: $btn-border-width solid transparent;
+  border-radius: $btn-border-radius;
+  transition: all 250ms;
+  box-shadow: $btn-box-shadow;
+
+  &:hover {
+    box-shadow: $btn-hover-box-shadow;
+    border-color: transparent;
+    transform: translateY(-1px);
+  }
+
+  &:focus {
+    box-shadow: $btn-focus-box-shadow;
+    border-color: transparent;
+  }
+
+  &:active {
+    box-shadow: $btn-active-box-shadow;
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+
+  //   .btn-check + &:hover {
+  //     // override for the checkbox/radio buttons
+  //     color: var(--#{$prefix}btn-color);
+  //     background-color: var(--#{$prefix}btn-bg);
+  //     border-color: var(--#{$prefix}btn-border-color);
+  //   }
+
+  // &:focus-visible {
+  //   color: $btn-hover-color;
+  //   border-color: $btn-hover-border-color;
+  //   outline: 0;
+  //   // Avoid using mixin so we can pass custom focus shadow properly
+  //   @if $enable-shadows {
+  //     box-shadow: $btn-box-shadow, $btn-focus-box-shadow;
+  //   } @else {
+  //     box-shadow: $btn-focus-box-shadow;
+  //   }
+  // }
+  &__lg {
+    padding: $btn-padding-y-lg $btn-padding-x-lg;
+  }
+}
+
+@each $color, $value in $theme-colors {
+  .btn__#{$color} {
+    @include element-variant($value, $value);
+  }
+  .btn__outline-#{$color} {
+    @include button-outline-variant($value);
+  }
+}
+
+.btn--social {
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+  box-shadow: $box-shadow;
+  font-size: 14px;
+  min-width: 12rem;
+  padding: 0.875rem 1rem;
+  .content {
+    margin-left: 1rem;
+  }
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.btn--google {
+  border: none;
+  background-color: $white;
+  color: #757575;
+}
+
+.btn--fb {
+  background: #4267b2;
+
+  &:active {
+    background-color: #3b5998;
+  }
+  p {
+    color: rgba(white, 0.87);
+  }
+}

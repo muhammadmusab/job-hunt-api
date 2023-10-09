@@ -1,0 +1,22 @@
+a {
+  text-decoration: $link-text-decoration;
+  color: $link-color;
+  padding: 0.5rem 0.875rem;
+
+  &:not(.btn) {
+    &.active,
+    &:hover {
+      @include pseudo(after, 25%, 3px, 100%, 0.875rem, block) {
+        background: $primary;
+        transform: scaleX(0);
+        transform-origin: left bottom;
+        transition: $general-transition-quick-all;
+      }
+      color: $link-active-color;
+      font-weight: 500;
+      &::after {
+        transform: scaleX(1);
+      }
+    }
+  }
+}

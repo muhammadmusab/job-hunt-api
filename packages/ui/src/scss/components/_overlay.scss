@@ -1,0 +1,39 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  opacity: 1;
+  z-index: z(overlay);
+  background-color: rgba(0, 0, 0, 0.5);
+  &.backdropBlur {
+    @include backdrop-blur(12px);
+  }
+  &__center {
+    align-items: center;
+  }
+  &__top {
+    align-items: flex-start;
+  }
+  &__bottom {
+    align-items: flex-end;
+  }
+}
+
+// Children Animations
+.zoom {
+  animation: zoomIn 0.6s ease-in-out;
+  &.exit {
+    animation: zoomOut 0.6s ease-in-out;
+  }
+}
+
+.slide {
+  animation: slideUp 0.6s ease-in-out;
+  &.exit {
+    animation: slideDown 0.6s ease-in-out;
+  }
+}

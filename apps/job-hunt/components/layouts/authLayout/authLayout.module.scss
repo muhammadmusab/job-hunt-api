@@ -1,0 +1,16 @@
+.auth-layout {
+  min-height: 100vh;
+  height: 1px;
+  > * {
+    // @include flex-center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    flex: 1;
+
+    &:nth-of-type(even) {
+      background-color: $gray-100;
+    }
+  }
+}

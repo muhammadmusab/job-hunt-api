@@ -1,0 +1,9 @@
+.label {
+  @include themed() {
+    color: t('text');
+    background: t('bg');
+  }
+  font-size: 15px;
+  line-height: 1;
+  user-select: none;
+}

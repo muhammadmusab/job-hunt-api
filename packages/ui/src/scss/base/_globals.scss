@@ -1,0 +1,14 @@
+:root {
+  --radix-collapsible-content-height: 68px;
+  --radix-collapsible-content-width: 300px;
+}
+
+body {
+  font-family: $body-font-family;
+  background: $body-bg;
+}
+
+
+.flex-column{
+  flex-direction: column;
+}

@@ -1,0 +1,24 @@
+.form-check {
+  @include flex-center;
+  &__input {
+    @include flex-center;
+    background-color: $check-input-bg;
+    width: $check-input-width;
+    height: $check-input-height;
+    border-radius: $check-input-border-radius;
+    box-shadow: $check-input-box-shadow;
+    border: $check-input-border;
+
+    &:hover {
+      background-color: $check-input-hover-bg;
+    }
+    &:focus {
+      box-shadow: $check-input-focus-box-shadow;
+    }
+  }
+  &__indicator {
+    color: $check-input-indicator-color;
+  }
+}
+
+

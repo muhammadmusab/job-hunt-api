@@ -1,0 +1,353 @@
+@mixin clamp(
+  $property,
+  $min-size,
+  $scaler,
+  $max-size,
+  $min-size-left: false,
+  $scaler-left: false,
+  $max-size-left: false
+) {
+  @if $min-size-left == false {
+    #{$property}: $max-size;
+    #{$property}: #{'min(max(#{$min-size}, #{$scaler}), #{$max-size})'};
+    #{$property}: clamp($min-size, $scaler, $max-size);
+  } @else if $min-size-left == 0 or $min-size-left == auto {
+    #{$property}: $max-size $min-size-left;
+    #{$property}: #{'min(max(#{$min-size}, #{$scaler}), #{$max-size})'} $min-size-left;
+    #{$property}: clamp($min-size, $scaler, $max-size) $min-size-left;
+  } @else {
+    #{$property}: $max-size $min-size-left;
+    #{$property}: #{'min(max(#{$min-size}, #{$scaler}), #{$max-size})'}
+      #{'min(max(#{$min-size-left}, #{$scaler-left}), #{$max-size-left})'};
+    #{$property}: clamp($min-size, $scaler, $max-size)
+      clamp($min-size-left, $scaler-left, $max-size-left);
+  }
+}
+
+@mixin element-variant(
+  $background,
+  $border,
+  $color: color-contrast($background),
+  $hover-background:
+    if(
+      $color == $color-contrast-light,
+      shade-color($background, $btn-hover-bg-shade-amount),
+      tint-color($background, $btn-hover-bg-tint-amount)
+    )
+) {
+  color: $color;
+  background: $background;
+  &:hover {
+    background-color: $hover-background;
+  }
+}
+
+@mixin button-outline-variant(
+  $color,
+  $color-hover: color-contrast($color),
+  $active-background: $color,
+  $active-border: $color,
+  $active-color: color-contrast($active-background)
+) {
+  color: $color;
+  border-color: $color;
+  &:hover {
+    color: $color-hover;
+    background-color: $active-background;
+    border-color: $active-border;
+  }
+
+  // --#{$prefix}btn-color: #{$color};
+  // --#{$prefix}btn-border-color: #{$color};
+  // --#{$prefix}btn-hover-color: #{$color-hover};
+  // --#{$prefix}btn-hover-bg: #{$active-background};
+  // --#{$prefix}btn-hover-border-color: #{$active-border};
+  // --#{$prefix}btn-focus-shadow-rgb: #{to-rgb($color)};
+  // --#{$prefix}btn-active-color: #{$active-color};
+  // --#{$prefix}btn-active-bg: #{$active-background};
+  // --#{$prefix}btn-active-border-color: #{$active-border};
+  // --#{$prefix}btn-active-shadow: #{$btn-active-box-shadow};
+  // --#{$prefix}btn-disabled-color: #{$color};
+  // --#{$prefix}btn-disabled-bg: transparent;
+  // --#{$prefix}btn-disabled-border-color: #{$color};
+  // --#{$prefix}gradient: none;
+}
+
+// Avatar mixins
+@mixin avatar-size($size) {
+  .avatar {
+    width: $size;
+    height: $size;
+    font-size: $size / 3;
+  }
+
+  .status {
+    width: $size / 4;
+    height: $size / 4;
+  }
+}
+
+@mixin status-variant($color) {
+  background-color: $color;
+}
+
+@mixin flex-center() {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin mq($width, $type: max) {
+  @if map_has_key($grid-breakpoints, $width) {
+    $width: map_get($grid-breakpoints, $width);
+    @if $type == max {
+      $width: $width - 1px;
+    }
+    @media only screen and (#{$type}-width: $width) {
+      @content;
+    }
+  }
+}
+
+@mixin generateResponsiveClasses($class-prefix, $property, $values, $unit: '', $class-suffix: '') {
+  @each $breakpoint, $breakpoint-value in $grid-breakpoints {
+    @if (is-map($values) == true) {
+      @each $key, $value in $values {
+        @if $breakpoint == xxs {
+          .#{$class-prefix}-#{$key} {
+            @if ($unit != '') {
+              #{$property}: $value $unit !important;
+            } @else {
+              #{$property}: $value !important;
+            }
+          }
+        } @else {
+          @media (min-width: $breakpoint-value) {
+            .#{$class-prefix}-#{$breakpoint}-#{$key} {
+              @if ($unit != '') {
+                #{$property}: $value $unit !important;
+              } @else {
+                #{$property}: $value !important;
+              }
+            }
+          }
+        }
+      }
+    } @else {
+      $infix: breakpoint-infix($breakpoint, $grid-breakpoints);
+      @if $breakpoint == xxs {
+        .#{$class-prefix}#{$infix}#{if($class-suffix,-$class-suffix,null)} {
+          #{$property}: $values !important;
+        }
+      } @else {
+        @media (min-width: $breakpoint-value) {
+          .#{$class-prefix}#{$infix}#{if($class-suffix,-$class-suffix,null)} {
+            #{$property}: $values !important;
+          }
+        }
+      }
+    }
+  }
+}
+
+@mixin make-container($gutter: $container-padding-x) {
+  width: 100%;
+  padding-right: calc($gutter * 0.5); // stylelint-disable-line function-disallowed-list
+  padding-left: calc($gutter * 0.5); // stylelint-disable-line function-disallowed-list
+  margin-right: auto;
+  margin-left: auto;
+}
+
+@mixin media-breakpoint-up($name, $breakpoints: $grid-breakpoints) {
+  $min: breakpoint-min($name, $breakpoints);
+  @if $min {
+    @media (min-width: $min) {
+      @content;
+    }
+  } @else {
+    @content;
+  }
+}
+
+// Grid system
+// Generate semantic grid columns with these mixins.
+
+@mixin make-row($gutter: $grid-gutter-width) {
+  display: flex;
+  flex-wrap: wrap;
+  // TODO: Revisit calc order after https://github.com/react-bootstrap/react-bootstrap/issues/6039 is fixed
+  margin-top: calc(-1 * 0); // stylelint-disable-line function-disallowed-list
+  margin-right: calc(-0.5 * $gutter); // stylelint-disable-line function-disallowed-list
+  margin-left: calc(-0.5 * $gutter); // stylelint-disable-line function-disallowed-list
+}
+
+@mixin make-col-ready() {
+  // Add box sizing if only the grid is loaded
+  box-sizing: if(
+    variable-exists(include-column-box-sizing) and $include-column-box-sizing,
+    border-box,
+    null
+  );
+  // Prevent columns from becoming too narrow when at smaller grid tiers by
+  // always setting `width: 100%;`. This works because we set the width
+  // later on to override this initial width.
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 100%; // Prevent `.col-auto`, `.col` (& responsive variants) from breaking out the grid
+  padding-right: calc($grid-gutter-width * 0.5); // stylelint-disable-line function-disallowed-list
+  padding-left: calc($grid-gutter-width * 0.5); // stylelint-disable-line function-disallowed-list
+  margin-top: var(--gutter-y);
+}
+
+@mixin make-col($size: false, $columns: $grid-columns) {
+  @if $size {
+    flex: 0 0 auto;
+    width: percentage(divide($size, $columns));
+  } @else {
+    flex: 1 1 0;
+    max-width: 100%;
+  }
+}
+
+@mixin make-col-auto() {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+@mixin make-col-offset($size, $columns: $grid-columns) {
+  $num: divide($size, $columns);
+  margin-left: if($num == 0, 0, percentage($num));
+}
+
+// Row columns
+//
+// Specify on a parent element(e.g., .row) to force immediate children into NN
+// number of columns. Supports wrapping to new lines, but does not do a Masonry
+// style grid.
+@mixin row-cols($count) {
+  > * {
+    flex: 0 0 auto;
+    width: divide(100%, $count);
+  }
+}
+
+// Framework grid generation
+//
+// Used only by Bootstrap to generate the correct number of grid classes given
+// any value of `$grid-columns`.
+
+@mixin make-grid-columns(
+  $columns: $grid-columns,
+  $gutter: $grid-gutter-width,
+  $breakpoints: $grid-breakpoints
+) {
+  @each $breakpoint in map-keys($breakpoints) {
+    $infix: breakpoint-infix($breakpoint, $breakpoints);
+
+    @include media-breakpoint-up($breakpoint, $breakpoints) {
+      // Provide basic `.col-{bp}` classes for equal-width flexbox columns
+      .col#{$infix} {
+        flex: 1 0 0%; // Flexbugs #4: https://github.com/philipwalton/flexbugs#flexbug-4
+      }
+
+      .row-cols#{$infix}-auto > * {
+        @include make-col-auto();
+      }
+
+      @if $grid-row-columns > 0 {
+        @for $i from 1 through $grid-row-columns {
+          .row-cols#{$infix}-#{$i} {
+            @include row-cols($i);
+          }
+        }
+      }
+
+      .col#{$infix}-auto {
+        @include make-col-auto();
+      }
+
+      @if $columns > 0 {
+        @for $i from 1 through $columns {
+          .col#{$infix}-#{$i} {
+            @include make-col($i, $columns);
+          }
+        }
+
+        // `$columns - 1` because offsetting by the width of an entire row isn't possible
+        @for $i from 0 through ($columns - 1) {
+          @if not($infix == '' and $i == 0) {
+            // Avoid emitting useless .offset-0
+            .offset#{$infix}-#{$i} {
+              @include make-col-offset($i, $columns);
+            }
+          }
+        }
+      }
+
+      // Gutters
+      //
+      // Make use of `.g-*`, `.gx-*` or `.gy-*` utilities to change spacing between the columns.
+      // @each $key, $value in $gutters {
+      //   .g#{$infix}-#{$key},
+      //   .gx#{$infix}-#{$key} {
+      //     --gutter-x: #{$value};
+      //   }
+
+      //   .g#{$infix}-#{$key},
+      //   .gy#{$infix}-#{$key} {
+      //     --gutter-y: #{$value};
+      //   }
+      // }
+    }
+  }
+}
+
+@mixin make-cssgrid($columns: $grid-columns, $breakpoints: $grid-breakpoints) {
+  @each $breakpoint in map-keys($breakpoints) {
+    $infix: breakpoint-infix($breakpoint, $breakpoints);
+
+    @include media-breakpoint-up($breakpoint, $breakpoints) {
+      @if $columns > 0 {
+        @for $i from 1 through $columns {
+          .g-col#{$infix}-#{$i} {
+            grid-column: auto / span $i;
+          }
+        }
+
+        // Start with `1` because `0` is and invalid value.
+        // Ends with `$columns - 1` because offsetting by the width of an entire row isn't possible.
+        @for $i from 1 through ($columns - 1) {
+          .g-start#{$infix}-#{$i} {
+            grid-column-start: $i;
+          }
+        }
+      }
+    }
+  }
+}
+
+@mixin backdrop-blur($value) {
+  @if $value == 0 {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  } @else {
+    -webkit-backdrop-filter: blur($value);
+    backdrop-filter: blur($value);
+  }
+}
+
+@mixin pseudo($ba,$width,$height,$top,$left,$display:block,$rel:true,$position:absolute,$content:null) {
+  @if ($rel == true) {
+    position: relative;
+  }
+  &:#{$ba} {
+    display:$display;
+    position: $position;
+    width:$width;
+    height:$height;
+    top:$top;
+    left:$left;
+    content: "#{$content}";
+    @content;
+  }
+}

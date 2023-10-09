@@ -1,0 +1,55 @@
+name: Deploy to PROD (main)
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    types: [closed]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # Defining job outputs
+    outputs:
+    steps:
+      -name: Server setup
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y apt-transport-https ca-certificates curl gnupg-agent software-properties-common
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+          sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+          sudo apt-get update
+          sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+          sudo apt-get install -y yarn
+      - name: Get code
+        uses: actions/checkout@v3
+      - name: Cache depenencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: deps-node-modules-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Build docker image
+        run: docker build docker -t shumaslaghari/job-hunt-client:latest
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Push to Dockerhub
+        run: docker push shumaslaghari/job-hunt-client
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Connect to digital ocean via ssh and deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{secrets.DIGITALOCEAN_HOST}}
+          key: ${{secrets.DIGITALOCEAN_SSH_KEY}}
+          passphrase: ${{secrets.DIGITALOCEAN_SSH_PASSPHRASE}}
+        script: |
+          docker-compose up -f ./docker/docker-compose.prod.yml

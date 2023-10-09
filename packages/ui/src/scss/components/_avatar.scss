@@ -1,0 +1,59 @@
+.avatar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  @include themed() {
+    background-color: t('bg-avatar');
+    color: t('text-avatar');
+  }
+  user-select: none;
+  border-radius: 100%;
+
+  .__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: inherit;
+  }
+
+  .__fallback {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: white;
+    line-height: 1;
+    font-weight: 500;
+  }
+}
+
+@include avatar-size(6rem);
+
+.status {
+  position: absolute;
+  z-index: z(status);
+  top: 0;
+  right: 0;
+  border-radius: 100%;
+}
+
+@each $color, $value in $theme-colors {
+  .status__#{$color} {
+    @include status-variant($value);
+  }
+}
+
+.status__dot {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+
+@each $size, $value in $avatar-sizes {
+  .avatar__#{$size} {
+    @include avatar-size($value);
+  }
+}
