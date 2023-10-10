@@ -41,7 +41,7 @@ export const generateVerificationMail = async (email: string, token: string) => 
         token: token,
         // @ts-ignore
         platformname: PLATFORM_NAME,
-        url: `${process.env.DOMAIN}/verification?token=${token}`,
+        url: `${process.env.DOMAIN}/auth/verification?token=${token}`,
       },
     };
    
@@ -63,7 +63,7 @@ export const generateResetPasswordMail = async (email: string, token: string) =>
       subject: 'Password reset',
       template: 'reset-password',
       context: {
-        url: `${process.env.DOMAIN}/reset-pass?token=${token}`,
+        url: `${process.env.DOMAIN}/auth/reset-pass?token=${token}`,
       },
     };
    

@@ -26,22 +26,20 @@ const jwtRefreshPublicKey = fs.readFileSync(
 // ======Register
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    let { email, contact, password, repeatPassword, profileImage = null } = req.body;
+    let { email, contact, password, profileImage = null } = req.body;
     // we get query from FE
     const type = req.query.type as UserType;
 
     let user;
     let company;
     let auth;
-
-    if (profileImage && req.file?.filename) {
-      profileImage = `${process.env.API_URL}media/${req.file.filename}`;
+    let file=[];
+    if(req.files && req.files?.length){
+      let files=req.files as any;
+      file=files[0];
     }
-
-    // check if password and repeat-password is same
-    if (password !== repeatPassword) {
-      const err = new BadRequestError('password fields do not match');
-      return next(err);
+    if (profileImage && file.filename && file.length) {
+      profileImage = `${process.env.API_URL}media/${file.filename}`;
     }
 
     // check if email exists:
@@ -116,6 +114,35 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
     res.status(500).send({ message: error });
   }
 };
+export const sendVerificationMail = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    let { email} = req.body;
+    
+    // check if email exists:
+    const existingEmail = await Auth.findOne({
+      where: {
+        email,
+      },
+    });
+    if (!existingEmail) {
+      const err = new BadRequestError('No registered user found with this email');
+      return next(err);
+    }
+
+    
+      const token = await existingEmail.generateMailToken();
+      const result=await generateVerificationMail(existingEmail.email, token);
+      let message='Success';
+      if(result.rejected){
+        message="Error, Failed to send an email"
+      }
+      res.status(201).send({ message });
+    
+  } catch (error) {
+    // next(error);
+    res.status(500).send({ message: error });
+  }
+};
 
 //======Google Signin
 export const googleSignin = async (req: Request, res: Response, next: NextFunction) => {
@@ -131,8 +158,14 @@ export const googleSignin = async (req: Request, res: Response, next: NextFuncti
     let authType = AuthType.SOCIAL;
     let auth;
 
-    if (profileImage && req.file?.filename) {
-      profileImage = `${process.env.API_URL}media/${req.file.filename}`;
+    let file=[];
+    if(req.files && req.files?.length){
+      let files=req.files as any;
+      file=files[0];
+    }
+
+    if (profileImage && file.length && file.filename ) {
+      profileImage = `${process.env.API_URL}media/${file.filename}`;
     }
 
     const client = new OAuth2Client(process.env.GOOGLE_OAUTH_CLIENT_ID);
