@@ -33,7 +33,7 @@ export const up: Migration = async ({ context }: { context: Sequelize }) => {
       },
     },
     type: {
-      type: DataTypes.ENUM('COMPANY', 'USER'),
+      type: DataTypes.ENUM('company', 'user'),
       allowNull: false,
     },
     authType: {
@@ -58,6 +58,9 @@ export const up: Migration = async ({ context }: { context: Sequelize }) => {
       },
     },
     profileImage: {
+      type: DataTypes.STRING,
+    },
+    coverImage: {
       type: DataTypes.STRING,
     },
     createdAt: {

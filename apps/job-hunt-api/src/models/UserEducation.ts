@@ -5,67 +5,59 @@ import {
   CreationOptional,
   InferAttributes,
   InferCreationAttributes,
+  NonAttribute,
   UUIDV4,
 } from 'sequelize';
-interface CompanyModel
-  extends Model<InferAttributes<CompanyModel>, InferCreationAttributes<CompanyModel>> {
+interface UserEducationModel
+  extends Model<InferAttributes<UserEducationModel>, InferCreationAttributes<UserEducationModel>> {
   id?: CreationOptional<number>;
   uuid: CreationOptional<string>;
-  name: string;
-  vatNumber: string;
-  address: string;
-  foundationYear: number;
-  contact: string;
-  industry?: string;
-  description?: string;
-  website?: string;
-  numberOfEmployees?: number;
-  hiring?: boolean;
+  instituteName: string;
+  degree: string;
+  fieldOfStudy: string;
+  grade: string;
+  startDate: string;
+  endDate: string;
+  UserId: number;
 }
-export const Company = sequelize.define<CompanyModel>(
-  'Company',
+export const UserEducation = sequelize.define<UserEducationModel>(
+  'UserEducation',
   {
     uuid: {
       type: DataTypes.UUID,
       defaultValue: UUIDV4,
       unique: true,
     },
-    name: {
+    instituteName: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    industry: {
+    degree: {
       type: DataTypes.STRING,
+      allowNull: false,
     },
-    description: {
+    fieldOfStudy: {
       type: DataTypes.STRING,
+      allowNull: false,
     },
-    website: {
+    grade: {
       type: DataTypes.STRING,
+      allowNull: false,
     },
-    numberOfEmployees: {
+    startDate: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
+    endDate: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
+    UserId: {
       type: DataTypes.INTEGER,
-    },
-    hiring: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
-    },
-
-    vatNumber: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    foundationYear: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    address: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    contact: {
-      type: DataTypes.STRING,
-      allowNull: false,
+      references: {
+        model: 'Users',
+        key: 'id',
+      },
     },
   },
   {
@@ -79,5 +71,6 @@ export const Company = sequelize.define<CompanyModel>(
         },
       },
     },
+    freezeTableName: true,
   },
 );

@@ -8,14 +8,21 @@ import {
   NonAttribute,
   UUIDV4,
 } from 'sequelize';
+import { Gender, identityType } from '../types/model-types';
 interface UserModel extends Model<InferAttributes<UserModel>, InferCreationAttributes<UserModel>> {
   id?: CreationOptional<number>;
   firstName: string;
   lastName: string;
+  description?: string;
+  headline?: string;
+  portfolioUrl?: string;
+  dateOfBirth?: string;
   fullName?: CreationOptional<string>;
   uuid: CreationOptional<string>;
-  email: string;
-  contact: string;
+  contact?: string;
+  gender?: Gender;
+  identityType?: identityType;
+  identity?: string;
 }
 export const User = sequelize.define<UserModel>(
   'User',
@@ -27,11 +34,33 @@ export const User = sequelize.define<UserModel>(
     },
     firstName: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull:false,
     },
     lastName: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull:false,
+    },
+    description: {
+      type: DataTypes.STRING,
+
+    },
+    headline: {
+      type: DataTypes.STRING,
+    },
+    portfolioUrl: {
+      type: DataTypes.STRING,
+    },
+    gender: {
+      type: DataTypes.ENUM('male', 'female'),
+    },
+    dateOfBirth: {
+      type: DataTypes.STRING,
+    },
+    identityType: {
+      type: DataTypes.ENUM('id card', 'passport', 'driving license'),
+    },
+    identity: {
+      type: DataTypes.STRING,
     },
     fullName: {
       type: DataTypes.VIRTUAL,
@@ -39,17 +68,9 @@ export const User = sequelize.define<UserModel>(
         return this.firstName + this.lastName;
       },
     },
-    email: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      unique: true,
-      validate: {
-        isEmail: true,
-      },
-    },
     contact: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull:false,
     },
   },
   {
@@ -59,7 +80,7 @@ export const User = sequelize.define<UserModel>(
     scopes: {
       withId: {
         attributes: {
-          exclude:[]
+          exclude: [],
         },
       },
     },

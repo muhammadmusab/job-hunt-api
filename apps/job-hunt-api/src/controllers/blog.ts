@@ -1,7 +1,7 @@
 import { Blog } from '../models/Blog';
 import { Request, Response, NextFunction } from 'express';
 import { UserType, AuthType } from '../types/model-types';
-import { BadRequestError } from '@codelab/api-errors';
+import { BadRequestError } from '../utils/api-errors';
 import { getValidUpdates } from '../utils/validate-updates';
 import { getPaginated } from '../utils/paginate';
 import sequelize, { Op } from 'sequelize';

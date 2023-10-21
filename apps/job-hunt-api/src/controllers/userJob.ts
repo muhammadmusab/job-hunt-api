@@ -3,7 +3,7 @@ import { UserJobs } from '../models/UserJobs';
 import { User } from '../models/User';
 import { Job } from '../models/Job';
 import { UserType } from '../types/model-types';
-import { BadRequestError } from '@codelab/api-errors';
+import { BadRequestError } from '../utils/api-errors';
 
 export const Apply = async (req: Request, res: Response, next: NextFunction) => {
   try {

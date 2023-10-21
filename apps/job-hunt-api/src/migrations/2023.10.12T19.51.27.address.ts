@@ -2,7 +2,7 @@ import type { Migration } from '../umguz';
 import { DataTypes, Sequelize, UUIDV4 } from 'sequelize';
 
 export const up: Migration = async ({ context }: { context: Sequelize }) => {
-  await context.getQueryInterface().createTable('Users', {
+  await context.getQueryInterface().createTable('Addresses', {
     id: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -14,38 +14,39 @@ export const up: Migration = async ({ context }: { context: Sequelize }) => {
       defaultValue: UUIDV4,
       unique: true,
     },
-    firstName: {
+    streetAddress:{
+      type:DataTypes.STRING,
+      allowNull:false
+    },
+    zipCode: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    lastName: {
-      type: DataTypes.STRING,
-      allowNull: false,
+    city:{
+      type:DataTypes.STRING,
+      allowNull:false
     },
-    description: {
-      type: DataTypes.STRING,
+    state:{
+      type:DataTypes.STRING,
+      allowNull:false
     },
-    headline: {
-      type: DataTypes.STRING,
+    country:{
+      type:DataTypes.STRING,
+      allowNull:false
     },
-    portfolioUrl: {
-      type: DataTypes.STRING,
+    CompanyId: {
+      type: DataTypes.INTEGER,
+      references: {
+        model: 'Companies',
+        key: 'id',
+      },
     },
-    gender: {
-      type: DataTypes.ENUM('male', 'female'),
-    },
-    dateOfBirth: {
-      type: DataTypes.STRING,
-    },
-    identityType: {
-      type: DataTypes.ENUM('id card', 'passport', 'driving license'),
-    },
-    identity: {
-      type: DataTypes.STRING,
-    },
-    contact: {
-      type: DataTypes.STRING,
-      allowNull: false,
+    UserId: {
+      type: DataTypes.INTEGER,
+      references: {
+        model: 'Users',
+        key: 'id',
+      },
     },
     createdAt: {
       type: DataTypes.DATE,
@@ -57,5 +58,5 @@ export const up: Migration = async ({ context }: { context: Sequelize }) => {
 };
 
 export const down: Migration = async ({ context }: { context: Sequelize }) => {
-  await context.getQueryInterface().dropTable('Users');
+  await context.getQueryInterface().dropTable('Addresses');
 };

@@ -1,4 +1,4 @@
-import { AuthError } from '@codelab/api-errors';
+import { AuthError } from '../utils/api-errors';
 import { verifyDecodedToken } from '../types/general';
 import { UserType } from '../types/model-types';
 import { Request, Response, NextFunction } from 'express';

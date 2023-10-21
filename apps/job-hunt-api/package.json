@@ -37,7 +37,6 @@
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.282.0",
-    "@codelab/api-errors": "*",
     "@mailchimp/mailchimp_marketing": "^3.0.80",
     "@types/cookie-parser": "^1.4.3",
     "@types/cors": "^2.8.13",
