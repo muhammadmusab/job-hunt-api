@@ -17,7 +17,7 @@ interface UserExperienceModel extends Model<InferAttributes<UserExperienceModel>
   location:string;
   startDate:string;
   endDate:string;
-  UserId:number;
+  UserId?:number;
   activeJob:boolean;
 }
 export const UserExperience = sequelize.define<UserExperienceModel>(
@@ -33,7 +33,7 @@ export const UserExperience = sequelize.define<UserExperienceModel>(
       allowNull: false,
     },
     employmentType: {
-      type: DataTypes.ENUM('full time','part time','hourly','contract','trainee'),
+      type: DataTypes.STRING,
       allowNull: false,
     },
     companyName:{
@@ -50,7 +50,6 @@ export const UserExperience = sequelize.define<UserExperienceModel>(
     },
     endDate:{
       type:DataTypes.DATE,
-      allowNull:false
     },
     activeJob:{
       type:DataTypes.BOOLEAN,

@@ -8,26 +8,23 @@ export const createUserEducation = async (req: Request, res: Response, next: Nex
   try {
     const { degree, startDate, endDate, fieldOfStudy, grade, instituteName } = req.body;
 
-    const user = await User.scope('withId').findOne({
-      where: {
-        uuid: req.user.User?.uuid,
-      },
-      attributes: ['id'],
-    });
-    let userEducation = null;
-    if (user) {
-      userEducation = await UserEducation.create({
-        UserId: user?.id as number,
-        degree,
-        startDate,
-        endDate,
-        fieldOfStudy,
-        grade,
-        instituteName,
-      });
-    }
+    const { user } = await getUserId(req.user.User?.uuid as string);
 
-    res.status(201).send({ message: 'Success', data: userEducation });
+    let userEducation = null;
+
+    userEducation = await UserEducation.create({
+      UserId: user?.id as number,
+      degree,
+      startDate,
+      endDate,
+      fieldOfStudy,
+      grade,
+      instituteName,
+    });
+
+    let { data } = getData(userEducation);
+
+    res.status(201).send({ message: 'Success', data });
   } catch (error) {
     res.status(500).send({ message: error });
   }
@@ -44,17 +41,19 @@ export const updateUserEducation = async (req: Request, res: Response, next: Nex
     ];
     const validBody = getValidUpdates(validUpdates, req.body);
     const { uid } = req.params;
+    const { user } = await getUserId(req.user.User?.uuid as string);
 
     const result = await UserEducation.update(
       { ...validBody },
       {
         where: {
           uuid: uid,
+          UserId: user?.id,
         },
       },
     );
 
-    if (!result) {
+    if (!result[0]) {
       const err = new BadRequestError('Could not update the user education data');
       res.status(err.status).send({ message: err.message });
       return;
@@ -67,9 +66,11 @@ export const updateUserEducation = async (req: Request, res: Response, next: Nex
 export const deleteUserEducation = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { uid } = req.params;
+    const { user } = await getUserId(req.user.User?.uuid as string);
     const result = await UserEducation.destroy({
       where: {
         uuid: uid,
+        UserId: user?.id,
       },
     });
     if (result === 1) {
@@ -84,21 +85,40 @@ export const deleteUserEducation = async (req: Request, res: Response, next: Nex
 };
 export const listUserEducation = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = await User.scope('withId').findOne({
-      where: {
-        uuid: req.user.User?.uuid,
-      },
-      attributes: ['id'],
-    });
+    const { user } = await getUserId(req.user.User?.uuid as string);
 
     const userEducation = await UserEducation.findAll({
       where: {
         UserId: user?.id as number,
       },
+      attributes: {
+        exclude: ['UserId'],
+      },
+      include: [
+        {
+          model: User,
+        },
+      ],
     });
 
     res.status(201).send({ message: 'Success', data: userEducation });
   } catch (error) {
     res.status(500).send({ message: error });
   }
+};
+
+const getUserId = async (uuid: string) => {
+  const user = await User.scope('withId').findOne({
+    where: {
+      uuid,
+    },
+    attributes: ['id'],
+  });
+  return { user };
+};
+
+const getData = (instance: any) => {
+  delete instance.dataValues.id;
+  delete instance.dataValues.UserId;
+  return { data: instance };
 };

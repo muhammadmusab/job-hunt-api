@@ -43,7 +43,7 @@ export const updateCompanyContact = async (req: Request, res: Response, next: Ne
       },
     );
 
-    if (!result) {
+    if (!result[0]) {
       const err = new BadRequestError('Could not update the company contact data');
       res.status(err.status).send({ message: err.message });
       return;

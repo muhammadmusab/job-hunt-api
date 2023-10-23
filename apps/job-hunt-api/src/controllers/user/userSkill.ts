@@ -8,17 +8,13 @@ export const createUserSkill = async (req: Request, res: Response, next: NextFun
   try {
     const { skill } = req.body;
 
-    const user = await User.scope('withId').findOne({
-      where: {
-        uuid: req.user.User?.uuid,
-      },
-      attributes: ['id'],
-    });
+    const { user } = await getUserId(req.user.User?.uuid as string);
+
     let userSkill = null;
 
     userSkill = await UserSkill.findOne({
       where: {
-        uuid: req.user.User?.uuid,
+        UserId: user?.id,
         skill,
       },
     });
@@ -27,15 +23,17 @@ export const createUserSkill = async (req: Request, res: Response, next: NextFun
       res.status(err.status).send({ message: err.message });
       return;
     }
-    if (user) {
-      userSkill = await UserSkill.create({
-        UserId: user?.id as number,
-        skill,
-      });
-    }
 
-    res.status(201).send({ message: 'Success', data: userSkill });
-  } catch (error) {
+    userSkill = await UserSkill.create({
+      UserId: user?.id as number,
+      skill,
+    });
+
+    let { data } = getData(userSkill);
+
+    res.status(201).send({ message: 'Success', data });
+  } catch (error: any) {
+    console.log(error.message);
     res.status(500).send({ message: error });
   }
 };
@@ -45,17 +43,30 @@ export const updateUserSkill = async (req: Request, res: Response, next: NextFun
     const validUpdates = ['skill'];
     const validBody = getValidUpdates(validUpdates, req.body);
     const { uid } = req.params;
+    const { user } = await getUserId(req.user.User?.uuid as string);
 
+    let userSkill = await UserSkill.findOne({
+      where: {
+        UserId: user?.id,
+        skill: validBody.skill,
+      },
+    });
+    if (userSkill) {
+      const err = new BadRequestError('Skill already exist');
+      res.status(err.status).send({ message: err.message });
+      return;
+    }
     const result = await UserSkill.update(
       { ...validBody },
       {
         where: {
           uuid: uid,
+          UserId: user?.id,
         },
       },
     );
 
-    if (!result) {
+    if (!result[0]) {
       const err = new BadRequestError('Could not update the user skill data');
       res.status(err.status).send({ message: err.message });
       return;
@@ -68,9 +79,11 @@ export const updateUserSkill = async (req: Request, res: Response, next: NextFun
 export const deleteUserSkill = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { uid } = req.params;
+    const { user } = await getUserId(req.user.User?.uuid as string);
     const result = await UserSkill.destroy({
       where: {
         uuid: uid,
+        UserId: user?.id,
       },
     });
     if (result === 1) {
@@ -85,21 +98,40 @@ export const deleteUserSkill = async (req: Request, res: Response, next: NextFun
 };
 export const listUserSkill = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = await User.scope('withId').findOne({
-      where: {
-        uuid: req.user.User?.uuid,
-      },
-      attributes: ['id'],
-    });
+    const { user } = await getUserId(req.user.User?.uuid as string);
 
     const userSkills = await UserSkill.findAll({
       where: {
         UserId: user?.id as number,
       },
+      attributes: {
+        exclude: ['UserId'],
+      },
+      include: [
+        {
+          model: User,
+        },
+      ],
     });
 
     res.status(201).send({ message: 'Success', data: userSkills });
   } catch (error) {
     res.status(500).send({ message: error });
   }
+};
+
+const getUserId = async (uuid: string) => {
+  const user = await User.scope('withId').findOne({
+    where: {
+      uuid,
+    },
+    attributes: ['id'],
+  });
+  return { user };
+};
+
+const getData = (instance: any) => {
+  delete instance.dataValues.id;
+  delete instance.dataValues.UserId;
+  return { data: instance };
 };

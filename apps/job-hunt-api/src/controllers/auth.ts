@@ -106,15 +106,15 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
 
     if (auth) {
       const token = await auth.generateMailToken();
+
       await generateVerificationMail(auth.email, token);
-      res
-        .status(201)
-        .send({ message: 'Success', data: { ...auth, status: AuthStatus.ACTIVATION_PENDING } });
+
+      res.status(201).send({ message: 'Success', data: auth });
     } else {
       const err = new BadRequestError('Bad Request');
       return next(err);
     }
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).send({ message: error });
   }
 };
@@ -337,11 +337,12 @@ export const verifyEmailAddress = async (req: Request, res: Response, next: Next
       return next(err);
     }
     auth.verified = true;
+    auth.status = AuthStatus.USER_VERIFIED;
     await auth.save();
 
     res.send({
       message: 'Success',
-      status: AuthStatus.USER_VERIFIED,
+      status: auth.status,
     });
   } catch (error) {
     res.status(500).send({ message: error });

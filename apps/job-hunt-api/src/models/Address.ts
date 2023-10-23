@@ -15,8 +15,8 @@ interface AddressModel extends Model<InferAttributes<AddressModel>, InferCreatio
   city:string;
   state:string;
   country:string;
-  CompanyId:number;
-  UserId:number;
+  CompanyId?:number;
+  UserId?:number;
 }
 export const Address = sequelize.define<AddressModel>('Address', {
   uuid: {

@@ -13,7 +13,7 @@ interface CompanyAreaModel
   id?: CreationOptional<number>;
   uuid: CreationOptional<string>;
   area: string;
-  CompanyId: number;
+  CompanyId?: number;
 }
 export const CompanyArea = sequelize.define<CompanyAreaModel>(
   'CompanyArea',

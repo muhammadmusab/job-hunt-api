@@ -15,7 +15,7 @@ export const up: Migration = async ({ context }: { context: Sequelize }) => {
       unique: true,
     },
     contactType: {
-      type: DataTypes.ENUM('phone', 'email'),
+      type: DataTypes.STRING,
       allowNull: false,
     },
     title: {

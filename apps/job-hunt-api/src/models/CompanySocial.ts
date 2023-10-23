@@ -15,7 +15,7 @@ interface CompanySocialModel
   uuid: CreationOptional<string>;
   platformType: socialplatformType;
   url: string;
-  CompanyId: number;
+  CompanyId?: number;
 }
 export const CompanySocial = sequelize.define<CompanySocialModel>(
   'CompanySocial',
@@ -26,7 +26,7 @@ export const CompanySocial = sequelize.define<CompanySocialModel>(
       unique: true,
     },
     platformType: {
-      type: DataTypes.ENUM('facebook', 'linkedin', 'twitter', 'crunchbase'),
+      type: DataTypes.STRING,
       allowNull: false,
     },
     url: {

@@ -22,7 +22,7 @@ interface UserCertificationModel
   endDate: string;
   isExpirationDate: boolean;
   certificate: string;
-  UserId: number;
+  UserId?:number;
 }
 export const UserCertification = sequelize.define<UserCertificationModel>(
   'UserCertification',

@@ -2,7 +2,6 @@ import type { Migration } from '../umguz';
 import { DataTypes, Sequelize, UUIDV4 } from 'sequelize';
 
 export const up: Migration = async ({ context }: { context: Sequelize }) => {
-
   await context.getQueryInterface().createTable('Auth', {
     id: {
       type: DataTypes.INTEGER,
@@ -33,12 +32,16 @@ export const up: Migration = async ({ context }: { context: Sequelize }) => {
       },
     },
     type: {
-      type: DataTypes.ENUM('company', 'user'),
+      type: DataTypes.STRING,
       allowNull: false,
     },
     authType: {
       type: DataTypes.STRING,
-      defaultValue: "CUSTOM",
+      defaultValue: 'CUSTOM',
+    },
+    status: {
+      type: DataTypes.STRING,
+      defaultValue: 'activation_pending',
     },
     verified: {
       type: DataTypes.BOOLEAN,

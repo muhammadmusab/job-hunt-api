@@ -16,7 +16,7 @@ interface UserSkillModel
   id?: CreationOptional<number>;
   uuid: CreationOptional<string>;
   skill: string;
-  UserId: number;
+  UserId?:number;
 }
 export const UserSkill = sequelize.define<UserSkillModel>(
   'UserSkill',

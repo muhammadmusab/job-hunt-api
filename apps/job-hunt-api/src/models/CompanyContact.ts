@@ -19,7 +19,7 @@ interface CompanyContactModel
   contactType: contactType;
   title: string;
   value: string;
-  CompanyId: number;
+  CompanyId?: number;
 }
 export const CompanyContact = sequelize.define<CompanyContactModel>(
   'CompanyContact',
@@ -30,7 +30,7 @@ export const CompanyContact = sequelize.define<CompanyContactModel>(
       unique: true,
     },
     contactType: {
-      type: DataTypes.ENUM('phone', 'email'),
+      type: DataTypes.STRING,
       allowNull:false
     },
     title: {

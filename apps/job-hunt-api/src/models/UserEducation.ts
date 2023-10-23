@@ -18,7 +18,7 @@ interface UserEducationModel
   grade: string;
   startDate: string;
   endDate: string;
-  UserId: number;
+  UserId?:number;
 }
 export const UserEducation = sequelize.define<UserEducationModel>(
   'UserEducation',

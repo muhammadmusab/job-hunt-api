@@ -1,7 +1,7 @@
 import { sequelize } from '../config/db';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { UserType, AuthType } from '../types/model-types';
+import { UserType, AuthType, AuthStatus } from '../types/model-types';
 import {
   Model,
   DataTypes,
@@ -41,6 +41,7 @@ interface AuthModel extends Model<InferAttributes<AuthModel>, InferCreationAttri
   profileImage: CreationOptional<string | null>;
   coverImage: CreationOptional<string | null>;
   authType?: CreationOptional<AuthType>;
+  status?: CreationOptional<AuthStatus>;
 }
 
 interface IAuthFunctions extends AuthModel {
@@ -73,7 +74,7 @@ export const Auth = sequelize.define<AuthModel & IAuthFunctions>(
       },
     },
     type: {
-      type: DataTypes.ENUM('company', 'user'),
+      type: DataTypes.STRING,
       allowNull: false,
     },
     verified: {
@@ -101,7 +102,11 @@ export const Auth = sequelize.define<AuthModel & IAuthFunctions>(
     },
     authType: {
       type: DataTypes.STRING,
-      defaultValue: 'CUSTOM',
+      defaultValue: 'custom',
+    },
+    status: {
+      type: DataTypes.STRING,
+      defaultValue: AuthStatus.ACTIVATION_PENDING,
     },
   },
   {

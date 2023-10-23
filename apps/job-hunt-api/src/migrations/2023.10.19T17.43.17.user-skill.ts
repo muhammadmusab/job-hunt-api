@@ -2,7 +2,7 @@ import type { Migration } from '../umguz';
 import { DataTypes, Sequelize, UUIDV4 } from 'sequelize';
 
 export const up: Migration = async ({ context }: { context: Sequelize }) => {
-  await context.getQueryInterface().createTable('Tokens', {
+  await context.getQueryInterface().createTable('UserSkill', {
     id: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -34,5 +34,5 @@ export const up: Migration = async ({ context }: { context: Sequelize }) => {
 };
 
 export const down: Migration = async ({ context }: { context: Sequelize }) => {
-  await context.getQueryInterface().dropTable('Tokens');
+  await context.getQueryInterface().dropTable('UserSkill');
 };

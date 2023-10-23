@@ -15,7 +15,7 @@ export const up: Migration = async ({ context }: { context: Sequelize }) => {
       unique: true,
     },
     platformType: {
-      type: DataTypes.ENUM('facebook', 'linkedin', 'twitter', 'crunchbase'),
+      type: DataTypes.STRING,
       allowNull: false,
     },
     url: {

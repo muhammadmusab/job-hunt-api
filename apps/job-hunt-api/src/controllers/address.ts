@@ -6,7 +6,7 @@ import { User } from '../models/User';
 import { Company } from '../models/Company';
 import { UserType } from '../types/model-types';
 
-export const createAddress = async (req: Request, res: Response, next: NextFunction) => {
+export const Create = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { city, country, state, streetAddress, zipCode } = req.body;
 
@@ -57,7 +57,7 @@ export const createAddress = async (req: Request, res: Response, next: NextFunct
     res.status(500).send({ message: error });
   }
 };
-export const updateAddress = async (req: Request, res: Response, next: NextFunction) => {
+export const Update = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const validUpdates = ['city', 'country', 'state', 'streetAddress', 'zipCode'];
     const validBody = getValidUpdates(validUpdates, req.body);
@@ -72,7 +72,7 @@ export const updateAddress = async (req: Request, res: Response, next: NextFunct
       },
     );
 
-    if (!result) {
+    if (!result[0]) {
       const err = new BadRequestError('Could not update the address data');
       res.status(err.status).send({ message: err.message });
       return;
@@ -82,7 +82,7 @@ export const updateAddress = async (req: Request, res: Response, next: NextFunct
     res.status(500).send({ message: error });
   }
 };
-export const deleteAddress = async (req: Request, res: Response, next: NextFunction) => {
+export const Delete = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { uid } = req.params;
     const result = await Address.destroy({
@@ -100,7 +100,7 @@ export const deleteAddress = async (req: Request, res: Response, next: NextFunct
     res.status(500).send({ message: error });
   }
 };
-export const listAddress = async (req: Request, res: Response, next: NextFunction) => {
+export const List = async (req: Request, res: Response, next: NextFunction) => {
   try {
     let user = null;
     let company = null;

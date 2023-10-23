@@ -32,13 +32,13 @@ export const up: Migration = async ({ context }: { context: Sequelize }) => {
       type: DataTypes.STRING,
     },
     gender: {
-      type: DataTypes.ENUM('male', 'female'),
+      type: DataTypes.STRING,
     },
     dateOfBirth: {
       type: DataTypes.STRING,
     },
     identityType: {
-      type: DataTypes.ENUM('id card', 'passport', 'driving license'),
+      type: DataTypes.STRING,
     },
     identity: {
       type: DataTypes.STRING,

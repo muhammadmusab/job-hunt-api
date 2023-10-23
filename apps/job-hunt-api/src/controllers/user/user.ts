@@ -70,7 +70,7 @@ export const Update = async (req: Request, res: Response, next: NextFunction) =>
         },
       },
     );
-    if (!result) {
+    if (!result[0]) {
       const err = new BadRequestError('Could not update the user data');
       res.status(err.status).send({ message: err.message });
       return;

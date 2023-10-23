@@ -19,7 +19,7 @@ export const up: Migration = async ({ context }: { context: Sequelize }) => {
       allowNull: false,
     },
     employmentType: {
-      type: DataTypes.ENUM('full time', 'part time', 'hourly', 'contract', 'trainee'),
+      type: DataTypes.STRING,
       allowNull: false,
     },
     companyName: {
@@ -36,7 +36,6 @@ export const up: Migration = async ({ context }: { context: Sequelize }) => {
     },
     endDate: {
       type: DataTypes.DATE,
-      allowNull: false,
     },
     activeJob:{
       type:DataTypes.BOOLEAN,
