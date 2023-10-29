@@ -7,38 +7,36 @@ import { Company } from '../../models/Company';
 export const createCompanyContact = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { contactType, title, value } = req.body;
-    const company = await Company.scope('withId').findOne({
-      where: {
-        uuid: req.user.Company?.uuid,
-      },
-      attributes: ['id'],
-    });
+    const { company } = await getCompanyId(req.user.Company?.uuid as string);
     let companyContact = null;
-    if (company) {
-      companyContact = await CompanyContact.create({
-        contactType,
-        title,
-        value,
-        CompanyId: company?.id as number,
-      });
-    }
 
-    res.status(201).send({ message: 'Success', data: companyContact });
+    companyContact = await CompanyContact.create({
+      contactType,
+      title,
+      value,
+      CompanyId: company?.id as number,
+    });
+
+    let { data } = getData(companyContact);
+    res.status(201).send({ message: 'Success', data });
   } catch (error) {
     res.status(500).send({ message: error });
   }
 };
+
 export const updateCompanyContact = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const validUpdates = ['contactType', 'title', 'value'];
     const validBody = getValidUpdates(validUpdates, req.body);
     const { uid } = req.params;
 
+    const { company } = await getCompanyId(req.user.Company?.uuid as string);
     const result = await CompanyContact.update(
       { ...validBody },
       {
         where: {
           uuid: uid,
+          CompanyId: company?.id,
         },
       },
     );
@@ -56,9 +54,11 @@ export const updateCompanyContact = async (req: Request, res: Response, next: Ne
 export const deleteCompanyContact = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { uid } = req.params;
+    const { company } = await getCompanyId(req.user.Company?.uuid as string);
     const result = await CompanyContact.destroy({
       where: {
         uuid: uid,
+        CompanyId: company?.id,
       },
     });
     if (result === 1) {
@@ -73,21 +73,40 @@ export const deleteCompanyContact = async (req: Request, res: Response, next: Ne
 };
 export const listCompanyContact = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const company = await Company.scope('withId').findOne({
-      where: {
-        uuid: req.user.Company?.uuid,
-      },
-      attributes: ['id'],
-    });
+    const { company } = await getCompanyId(req.user.Company?.uuid as string);
 
     const companyContact = await CompanyContact.findAll({
       where: {
         CompanyId: company?.id as number,
       },
+      attributes: {
+        exclude: ['CompanyId'],
+      },
+      include: [
+        {
+          model: Company,
+        },
+      ],
     });
 
     res.status(201).send({ message: 'Success', data: companyContact });
   } catch (error) {
     res.status(500).send({ message: error });
   }
+};
+
+const getCompanyId = async (uuid: string) => {
+  const company = await Company.scope('withId').findOne({
+    where: {
+      uuid,
+    },
+    attributes: ['id'],
+  });
+  return { company };
+};
+
+const getData = (instance: any) => {
+  delete instance.dataValues.id;
+  delete instance.dataValues.CompanyId;
+  return { data: instance };
 };

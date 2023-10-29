@@ -9,20 +9,26 @@ import sequelize, { Op } from 'sequelize';
 import { getFiltersAndSearch } from '../utils/QueryFilters';
 import { Filters, operators } from '../types/sequelize-custom-types';
 import { User } from '../models/User';
+import { Company } from '../models/Company';
 
 export const Create = async (req: Request, res: Response, next: NextFunction) => {
+  // missing properties
+  //workLevel,
   try {
     const {
       title,
-      descriptionShort,
-      descriptionLong,
-      requirements,
-      tags,
-      category,
+      employementType,
+      workLevel,
       expiryDate,
       salary,
+      paymentFrequency,
+      description,
+      requirements,
+      isOpen,
+      tags,
+      openPositions,
+      category,
       experience,
-      employementType,
       projectLength,
       location,
     } = req.body;
@@ -37,21 +43,26 @@ export const Create = async (req: Request, res: Response, next: NextFunction) =>
 
     const job = await Job.create({
       title,
-      descriptionShort,
-      descriptionLong,
-      requirements,
-      tags,
-      category,
+      employementType,
+      workLevel,
       expiryDate,
       salary,
+      paymentFrequency,
+      description,
+      requirements,
+      isOpen,
+      tags,
+      openPositions,
+      category,
       experience,
-      employementType,
       projectLength,
       location,
       CompanyId: company?.id as number,
     });
 
-    res.status(201).send({ message: 'Success', data: job });
+    const { data } = getData(job);
+
+    res.status(201).send({ message: 'Success', data });
   } catch (error) {
     res.status(500).send({ message: error });
   }
@@ -71,7 +82,9 @@ export const Get = async (req: Request, res: Response, next: NextFunction) => {
         uuid: uid,
       },
     });
-
+    if (job) {
+      delete job.dataValues.id;
+    }
     res.status(201).send({ message: 'Success', data: job });
   } catch (error) {
     res.status(500).send({ message: error });
@@ -84,15 +97,18 @@ export const Update = async (req: Request, res: Response, next: NextFunction) =>
 
     const validUpdates = [
       'title',
-      'descriptionShort',
-      'descriptionLong',
-      'requirements',
-      'tags',
-      'category',
+      'employementType',
+      'workLevel',
       'expiryDate',
       'salary',
+      'paymentFrequency',
+      'description',
+      'requirements',
+      'isOpen',
+      'tags',
+      'openPositions',
+      'category',
       'experience',
-      'employementType',
       'projectLength',
       'location',
     ];
@@ -102,17 +118,23 @@ export const Update = async (req: Request, res: Response, next: NextFunction) =>
       const err = new BadRequestError('wrong user request');
       res.status(403).send(err);
     }
-
-    const job = await Job.update(
+    // only the company which added the job can update job info
+    const result = await Job.update(
       { ...validBody },
       {
         where: {
           uuid: uid,
+          CompanyId: req.user.Company?.id,
         },
       },
     );
+    if (!result[0]) {
+      const err = new BadRequestError('Could not update the job data');
+      res.status(err.status).send({ message: err.message });
+      return;
+    }
 
-    res.status(201).send({ message: 'Success', data: job });
+    res.status(201).send({ message: 'Success', data: result });
   } catch (error) {
     res.status(500).send({ message: error });
   }
@@ -128,22 +150,198 @@ export const Delete = async (req: Request, res: Response, next: NextFunction) =>
 
     // const company = req.user.Company;
 
-    const job = await Job.destroy({
+    const result = await Job.destroy({
       where: {
         uuid: uid,
+        CompanyId: req.user.Company?.id,
       },
     });
 
-    res.status(201).send({ message: 'Success', data: job });
+    if (result === 1) {
+      res.status(201).send({ message: 'Success' });
+    } else {
+      const err = new BadRequestError('Bad Request');
+      res.status(err.status).send({ message: err.message });
+    }
   } catch (error) {
     res.status(500).send({ message: error });
   }
 };
 
-//job-seeker finding a job
-//company is not allowed to find a job
+// this is active job list route without authentication
+export const ActiveJobsList = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { limit, offset } = getPaginated(req.query);
+    // filters
+    const jobFilters = [
+      {
+        operator: operators.eq,
+        property: 'experience',
+        value: req.query.experience,
+        type: 'normal',
+      },
+      {
+        operator: operators.eq,
+        property: 'employementType',
+        value: req.query.employementType,
+        type: 'normal',
+      },
+      {
+        operator: operators.eq,
+        property: 'projectLength',
+        value: req.query.projectLength,
+        type: 'normal',
+      },
+      {
+        operator: operators.eq,
+        property: 'location',
+        value: req.query.location,
+        type: 'normal',
+      },
+      {
+        operator: operators.eq,
+        property: 'category',
+        value: req.query.category,
+        type: 'normal',
+      },
+      {
+        operator: operators.gte,
+        property: 'salaryMin',
+        value: req.query.salaryMin,
+        type: 'range',
+        parent: 'salary',
+        parentOperator: operators.and,
+      },
+      {
+        operator: operators.lte,
+        property: 'salaryMax',
+        value: req.query.salaryMax,
+        type: 'range',
+        parent: 'salary',
+        parentOperator: operators.and,
+      },
+      {
+        operator: operators.iLike,
+        property: 'title',
+        value: req.query.search,
+        type: 'search',
+        parentOperator: operators.or,
+      },
+    ] as Filters[];
 
-export const List = async (req: Request, res: Response, next: NextFunction) => {
+    const { filters, search } = getFiltersAndSearch(jobFilters as Filters[]);
+
+    let where = {
+      isOpen: true,
+    } as any;
+
+    if (filters.length) {
+      where = {
+        [Op.and]: [
+          {
+            isOpen: true,
+            //@ts-ignore
+            [Op.or]: filters,
+          },
+        ],
+      };
+    }
+    if (search) {
+      where = {
+        isOpen: true,
+        [Op.and]: [search],
+      };
+    }
+    if (search && filters.length) {
+      where = {
+        isOpen: true,
+        [Op.and]: [
+          {
+            [Op.or]: filters,
+          },
+          search,
+        ],
+      };
+    }
+
+    // sortBy
+    const sortBy = req.query.sortBy ? req.query.sortBy : 'createdAt';
+    const sortAs = req.query.sortAs ? (req.query.sortAs as string) : 'DESC';
+
+    const { count: total, rows: jobs } = await Job.findAndCountAll({
+      where,
+      offset: offset,
+      limit: limit,
+      order: [[sortBy as string, sortAs]],
+    });
+
+    const experience = await Job.findAll({
+      attributes: ['experience', [sequelize.fn('COUNT', sequelize.col('experience')), 'count']],
+      group: ['experience'],
+    });
+    const employementType = await Job.findAll({
+      attributes: [
+        'employementType',
+        [sequelize.fn('COUNT', sequelize.col('employementType')), 'count'],
+      ],
+      group: ['employementType'],
+    });
+    const filtersData = { experience, employementType };
+
+    res.status(201).send({ message: 'Success', data: jobs, total, filtersData });
+  } catch (error) {
+    res.status(500).send({ message: error });
+  }
+};
+
+// List of jobs by the job-seeker(user) without filters
+export const UserBasedJobList = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+
+    if (req.user && req.user.type === UserType.COMPANY) {
+      const err = new BadRequestError('wrong user request');
+      res.status(403).send(err);
+    }
+
+    //job-status: 'cancelled' || 'applied' || 'interviews'
+    const status = req.query.status as string;
+    // sortBy
+    const sortBy = req.query.sortBy ? req.query.sortBy : 'createdAt';
+    const sortAs = req.query.sortAs ? (req.query.sortAs as string) : 'DESC';
+
+    const { limit, offset } = getPaginated(req.query);
+
+    const { user } = await getUserId(req.user.User?.uuid as string);
+
+    // finding job ids with current user
+    const result = await UserJobs.findAll({
+      where: {
+        UserId: user?.id,
+        status,
+      },
+      attributes: ['JobId'],
+    });
+
+    // list of found job ids
+    const foundJobIds = result.map((item) => item.JobId);
+
+    const { count: total, rows: jobs } = await Job.findAndCountAll({
+      where: {
+        id: foundJobIds as number[],
+      },
+      offset: offset,
+      limit: limit,
+      order: [[sortBy as string, sortAs]],
+    });
+
+    res.status(201).send({ message: 'Success', data: jobs, total });
+  } catch (error) {
+    res.status(500).send({ message: error });
+  }
+};
+
+// list of jobs by the job-seeker(user) with filters
+export const UserBasedJobListWithFilters = async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (req.user && req.user.type === UserType.COMPANY) {
       const err = new BadRequestError('wrong user request');
@@ -177,6 +375,12 @@ export const List = async (req: Request, res: Response, next: NextFunction) => {
         operator: operators.eq,
         property: 'location',
         value: req.query.location,
+        type: 'normal',
+      },
+      {
+        operator: operators.eq,
+        property: 'category',
+        value: req.query.category,
         type: 'normal',
       },
       {
@@ -301,3 +505,23 @@ export const List = async (req: Request, res: Response, next: NextFunction) => {
     res.status(500).send({ message: error });
   }
 };
+
+
+
+const getUserId = async (uuid: string) => {
+  const user = await User.scope('withId').findOne({
+    where: {
+      uuid,
+    },
+    attributes: ['id'],
+  });
+  return { user };
+};
+const getData = (instance: any) => {
+  delete instance.dataValues.id;
+  delete instance.dataValues.CompanyId;
+  return { data: instance };
+};
+
+
+

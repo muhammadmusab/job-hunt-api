@@ -63,31 +63,3 @@ export const Apply = async (req: Request, res: Response, next: NextFunction) => 
     res.status(500).send({ message: error });
   }
 };
-
-export const ListAppliedJobs = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const {
-      uid, //uuid
-    } = req.params;
-
-    let userJob;
-    const user = await User.scope('withId').findOne({
-      where: {
-        uuid: uid,
-      },
-    });
-
-    if (user?.id) {
-      userJob = await UserJobs.findAll({
-        where: {
-          UserId: user?.id,
-        },
-      });
-    }
-
-    res.status(201).send({ message: 'Success', data: userJob?userJob:[] });
-  } catch (error: any) {
-    console.log(error);
-    res.status(500).send({ message: error });
-  }
-};

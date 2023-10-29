@@ -7,37 +7,37 @@ import { Company } from '../../models/Company';
 export const createCompanySocial = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { url, platformType } = req.body;
-    const company = await Company.scope('withId').findOne({
-      where: {
-        uuid: req.user.Company?.uuid,
-      },
-      attributes: ['id'],
-    });
-    let companySocial = null;
-    if (company) {
-      companySocial = await CompanySocial.create({
-        url,
-        platformType,
-        CompanyId: company?.id as number,
-      });
-    }
+    const { company } = await getCompanyId(req.user.Company?.uuid as string);
 
-    res.status(201).send({ message: 'Success', data: companySocial });
+    let companySocial = null;
+
+    companySocial = await CompanySocial.create({
+      url,
+      platformType,
+      CompanyId: company?.id as number,
+    });
+
+    let { data } = getData(companySocial);
+
+    res.status(201).send({ message: 'Success', data });
   } catch (error) {
     res.status(500).send({ message: error });
   }
 };
+
 export const updateCompanySocial = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const validUpdates = ['url', 'platformType'];
     const validBody = getValidUpdates(validUpdates, req.body);
     const { uid } = req.params;
+    const { company } = await getCompanyId(req.user.Company?.uuid as string);
 
     const result = await CompanySocial.update(
       { ...validBody },
       {
         where: {
           uuid: uid,
+          CompanyId: company?.id,
         },
       },
     );
@@ -55,9 +55,11 @@ export const updateCompanySocial = async (req: Request, res: Response, next: Nex
 export const deleteCompanySocial = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { uid } = req.params;
+    const { company } = await getCompanyId(req.user.Company?.uuid as string);
     const result = await CompanySocial.destroy({
       where: {
         uuid: uid,
+        CompanyId: company?.id,
       },
     });
     if (result === 1) {
@@ -72,21 +74,40 @@ export const deleteCompanySocial = async (req: Request, res: Response, next: Nex
 };
 export const listCompanySocial = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const company = await Company.scope('withId').findOne({
-      where: {
-        uuid: req.user.Company?.uuid,
-      },
-      attributes: ['id'],
-    });
+    const { company } = await getCompanyId(req.user.Company?.uuid as string);
 
     const companySocial = await CompanySocial.findAll({
       where: {
         CompanyId: company?.id as number,
       },
+      attributes: {
+        exclude: ['CompanyId'],
+      },
+      include: [
+        {
+          model: Company,
+        },
+      ],
     });
 
     res.status(201).send({ message: 'Success', data: companySocial });
   } catch (error) {
     res.status(500).send({ message: error });
   }
+};
+
+const getCompanyId = async (uuid: string) => {
+  const company = await Company.scope('withId').findOne({
+    where: {
+      uuid,
+    },
+    attributes: ['id'],
+  });
+  return { company };
+};
+
+const getData = (instance: any) => {
+  delete instance.dataValues.id;
+  delete instance.dataValues.CompanyId;
+  return { data: instance };
 };

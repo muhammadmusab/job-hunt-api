@@ -10,28 +10,13 @@ export const Create = async (req: Request, res: Response, next: NextFunction) =>
   try {
     const { city, country, state, streetAddress, zipCode } = req.body;
 
-    const type = req.query.type as UserType;
-
     let address = null;
     let user = null;
     let company = null;
 
-    if (type === UserType.USER) {
-      user = await User.scope('withId').findOne({
-        where: {
-          uuid: req.user.User?.uuid,
-        },
-        attributes: ['id'],
-      });
-    } else {
-      company = await Company.scope('withId').findOne({
-        where: {
-          uuid: req.user.Company?.uuid,
-        },
-        attributes: ['id'],
-      });
-    }
-
+    if (req.user.type === UserType.USER) user = await getUserId(req.user.User?.uuid as string);
+    else company = await getCompanyId(req.user.Company?.uuid as string);
+    console.log('running', req.user);
     let body = {
       UserId: null,
       CompanyId: null,
@@ -51,9 +36,10 @@ export const Create = async (req: Request, res: Response, next: NextFunction) =>
     }
 
     address = await Address.create(body);
-
-    res.status(201).send({ message: 'Success', data: address });
-  } catch (error) {
+    const { data } = getData(address);
+    res.status(201).send({ message: 'Success', data });
+  } catch (error: any) {
+    console.log(error.message);
     res.status(500).send({ message: error });
   }
 };
@@ -63,11 +49,21 @@ export const Update = async (req: Request, res: Response, next: NextFunction) =>
     const validBody = getValidUpdates(validUpdates, req.body);
     const { uid } = req.params;
 
+    let user = null;
+    let idType = 'CompanyId';
+
+    if (req.user.type === UserType.COMPANY) {
+      user = await getCompanyId(req.user.Company?.uuid as string);
+    } else {
+      user = await getUserId(req.user.User?.uuid as string);
+      idType = 'UserId';
+    }
     const result = await Address.update(
       { ...validBody },
       {
         where: {
           uuid: uid,
+          [idType]: user?.id,
         },
       },
     );
@@ -85,9 +81,18 @@ export const Update = async (req: Request, res: Response, next: NextFunction) =>
 export const Delete = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { uid } = req.params;
+    let user = null;
+    let idType = 'CompanyId';
+    if (req.user.type === UserType.COMPANY) {
+      user = await getCompanyId(req.user.Company?.uuid as string);
+    } else {
+      user = await getUserId(req.user.User?.uuid as string);
+      idType = 'UserId';
+    }
     const result = await Address.destroy({
       where: {
         uuid: uid,
+        [idType]: user?.id,
       },
     });
     if (result === 1) {
@@ -103,37 +108,64 @@ export const Delete = async (req: Request, res: Response, next: NextFunction) =>
 export const List = async (req: Request, res: Response, next: NextFunction) => {
   try {
     let user = null;
-    let company = null;
+
     let idType = null;
     let addresses = null;
-    const type = req.query.type as UserType;
+    let model = null;
 
-    if (type === UserType.COMPANY) {
-      company = await Company.scope('withId').findOne({
-        where: {
-          uuid: req.user.Company?.uuid,
-        },
-        attributes: ['id'],
-      });
-      idType = 'CompanyId';
-    } else {
-      user = await User.scope('withId').findOne({
-        where: {
-          uuid: req.user.User?.uuid,
-        },
-        attributes: ['id'],
-      });
+    if (req.user.type === UserType.USER) {
+      user = await getUserId(req.user.User?.uuid as string);
       idType = 'UserId';
+      model = User;
+    } else {
+      user = await  getCompanyId(req.user.Company?.uuid as string);
+      idType = 'CompanyId';
+      model = Company;
     }
 
     addresses = await Address.findAll({
       where: {
-        [idType]: type === UserType.COMPANY ? company?.id : (user?.id as number),
+        [idType]: user?.id,
       },
+      attributes: {
+        exclude: ['UserId', 'CompanyId'],
+      },
+      include: [
+        {
+          model,
+        },
+      ],
     });
 
     res.status(201).send({ message: 'Success', data: addresses });
-  } catch (error) {
+  } catch (error: any) {
+    console.log(error.message);
     res.status(500).send({ message: error });
   }
+};
+
+const getUserId = async (uuid: string) => {
+  const user = await User.scope('withId').findOne({
+    where: {
+      uuid,
+    },
+    attributes: ['id'],
+  });
+  return user;
+};
+const getCompanyId = async (uuid: string) => {
+  const company = await Company.scope('withId').findOne({
+    where: {
+      uuid,
+    },
+    attributes: ['id'],
+  });
+  return company;
+};
+
+const getData = (instance: any) => {
+  delete instance.dataValues.id;
+  delete instance.dataValues.CompanyId;
+  delete instance.dataValues.UserId;
+  return { data: instance };
 };

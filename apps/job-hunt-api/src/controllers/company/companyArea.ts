@@ -7,36 +7,58 @@ import { Company } from '../../models/Company';
 export const createCompanyArea = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { area } = req.body;
-    const company = await Company.scope('withId').findOne({
-      where: {
-        uuid: req.user.Company?.uuid,
-      },
-      attributes: ['id'],
-    });
-    let companyCompanyArea = null;
-    if (company) {
-      companyCompanyArea = await CompanyArea.create({
-        area,
-        CompanyId: company?.id as number,
-      });
-    }
+    const { company } = await getCompanyId(req.user.Company?.uuid as string);
 
-    res.status(201).send({ message: 'Success', data: companyCompanyArea });
+    let companyArea = null;
+    companyArea= await CompanyArea.findOne({
+      where:{
+        CompanyId: company?.id as number,
+        area,
+      }
+    })
+    if(companyArea){
+      const err = new BadRequestError('This field already exists');
+      res.status(err.status).send({ message: err.message });
+      return;
+    }
+    companyArea = await CompanyArea.create({
+      area,
+      CompanyId: company?.id as number,
+    });
+
+    let { data } = getData(companyArea);
+
+    res.status(201).send({ message: 'Success', data });
   } catch (error) {
     res.status(500).send({ message: error });
   }
 };
+
 export const updateCompanyArea = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const validUpdates = ['area'];
     const validBody = getValidUpdates(validUpdates, req.body);
     const { uid } = req.params;
 
+    const { company } = await getCompanyId(req.user.Company?.uuid as string);
+
+   let companyArea= await CompanyArea.findOne({
+      where:{
+        CompanyId: company?.id as number,
+        area:validBody.area,
+      }
+    })
+    if(companyArea){
+      const err = new BadRequestError('This field already exists');
+      res.status(err.status).send({ message: err.message });
+      return;
+    }
     const result = await CompanyArea.update(
       { ...validBody },
       {
         where: {
           uuid: uid,
+          CompanyId: company?.id,
         },
       },
     );
@@ -54,9 +76,11 @@ export const updateCompanyArea = async (req: Request, res: Response, next: NextF
 export const deleteCompanyArea = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { uid } = req.params;
+    const { company } = await getCompanyId(req.user.Company?.uuid as string);
     const result = await CompanyArea.destroy({
       where: {
         uuid: uid,
+        CompanyId: company?.id,
       },
     });
     if (result === 1) {
@@ -71,21 +95,40 @@ export const deleteCompanyArea = async (req: Request, res: Response, next: NextF
 };
 export const listCompanyArea = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const company = await Company.scope('withId').findOne({
-      where: {
-        uuid: req.user.Company?.uuid,
-      },
-      attributes: ['id'],
-    });
+    const { company } = await getCompanyId(req.user.Company?.uuid as string);
 
     const companyArea = await CompanyArea.findAll({
       where: {
         CompanyId: company?.id as number,
       },
+      attributes: {
+        exclude: ['CompanyId'],
+      },
+      include: [
+        {
+          model: Company,
+        },
+      ],
     });
 
     res.status(201).send({ message: 'Success', data: companyArea });
   } catch (error) {
     res.status(500).send({ message: error });
   }
+};
+
+const getCompanyId = async (uuid: string) => {
+  const company = await Company.scope('withId').findOne({
+    where: {
+      uuid,
+    },
+    attributes: ['id'],
+  });
+  return { company };
+};
+
+const getData = (instance: any) => {
+  delete instance.dataValues.id;
+  delete instance.dataValues.CompanyId;
+  return { data: instance };
 };

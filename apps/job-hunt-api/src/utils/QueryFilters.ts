@@ -1,4 +1,4 @@
-import { Filters, operators } from '../types/sequelize-custom-types';
+import { Filters } from '../types/sequelize-custom-types';
 
 export const getFiltersAndSearch = (filterArray: Filters[]) => {
   let filters = [] as any;

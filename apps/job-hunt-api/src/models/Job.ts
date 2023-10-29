@@ -11,89 +11,115 @@ interface JobModel extends Model<InferAttributes<JobModel>, InferCreationAttribu
   id?: CreationOptional<number>;
   uuid: CreationOptional<string>;
   title: string;
-  descriptionShort: CreationOptional<string>;
-  descriptionLong?: CreationOptional<string>;
-  requirements: string[];
+  employementType: string;
+  workLevel: string;
+  expiryDate: string;
+  salary: number;
+  paymentFrequency: string;
+  description: string;
+  requirements: string;
+  isOpen: boolean;
   tags?: string[];
-  category: CreationOptional<string[]>;
-  expiryDate:string;
-  salary:number;
-  experience:string;
-  employementType:string;
-  projectLength:string;
-  location:string;
-  CompanyId:number;
-  
+  openPositions: number;
+  category: string[];
+  experience: string; //required in years
+  projectLength: string;
+  location: string;
+  CompanyId: number;
+  popularity?: number;
 }
-export const Job = sequelize.define<JobModel>('Job', {
-  uuid: {
-    type: DataTypes.UUID,
-    defaultValue: UUIDV4,
-    unique: true,
-  },
-  title: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  descriptionShort: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  descriptionLong: {
-    type: DataTypes.TEXT,
-  },
-  requirements: {
-    type: DataTypes.JSON,
-    allowNull: false,
-  },
-  tags: {
-    type: DataTypes.JSON,
-    allowNull: false,
-  },
-  category: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  expiryDate:{
-    type:DataTypes.DATE,
-    allowNull:false
-  },
-  salary:{
-    type:DataTypes.FLOAT,
-    allowNull:false
-  },
-  experience:{
-    type:DataTypes.STRING,
-    allowNull:false
-  },
-  employementType:{
-    type:DataTypes.STRING,
-    allowNull:false
-  },
-  projectLength:{
-    type:DataTypes.STRING,
-    allowNull:false
-  },
-  location:{
-    type:DataTypes.STRING,
-    allowNull:false
-  },
-  CompanyId: {
-    type: DataTypes.INTEGER,
-    references: {
-      model: 'Companies',
-      key: 'id',
+export const Job = sequelize.define<JobModel>(
+  'Job',
+  {
+    uuid: {
+      type: DataTypes.UUID,
+      defaultValue: UUIDV4,
+      unique: true,
     },
-  },
-},{
-  defaultScope: {
-    attributes: { exclude: ['id'] },
-  },
-  scopes: {
-    withId: {
-      attributes: {
-        exclude:[]
+    title: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    employementType: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    workLevel: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    expiryDate: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
+    salary: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+    },
+    paymentFrequency: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    description: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+    },
+    requirements: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+    },
+    openPositions: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    isOpen: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+    },
+    tags: {
+      type: DataTypes.ARRAY(DataTypes.STRING),
+      allowNull: false,
+    },
+    category: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+
+    experience: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+
+    projectLength: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    location: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    popularity: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+    },
+    CompanyId: {
+      type: DataTypes.INTEGER,
+      references: {
+        model: 'Companies',
+        key: 'id',
       },
     },
   },
-});
+  {
+    defaultScope: {
+      attributes: { exclude: ['id'] },
+    },
+    scopes: {
+      withId: {
+        attributes: {
+          exclude: [],
+        },
+      },
+    },
+  },
+);
