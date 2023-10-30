@@ -50,9 +50,9 @@ export const up: Migration = async ({ context }: { context: Sequelize }) => {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    isOpen: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
+    status: {
+      type: DataTypes.STRING,
+      defaultValue:'new'
     },
     tags: {
       type: DataTypes.ARRAY(DataTypes.STRING),

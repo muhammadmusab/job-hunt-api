@@ -1,7 +1,12 @@
 import { Job } from '../models/Job';
 import { UserJobs } from '../models/UserJobs';
 import { Request, Response, NextFunction } from 'express';
-import { UserType, AuthType } from '../types/model-types';
+import {
+  UserType,
+  AuthType,
+  CompanyBasedJobStatus,
+  UserBasedJobStatus,
+} from '../types/model-types';
 import { BadRequestError } from '../utils/api-errors';
 import { getValidUpdates } from '../utils/validate-updates';
 import { getPaginated } from '../utils/paginate';
@@ -24,7 +29,7 @@ export const Create = async (req: Request, res: Response, next: NextFunction) =>
       paymentFrequency,
       description,
       requirements,
-      isOpen,
+      status = 'new',
       tags,
       openPositions,
       category,
@@ -50,7 +55,7 @@ export const Create = async (req: Request, res: Response, next: NextFunction) =>
       paymentFrequency,
       description,
       requirements,
-      isOpen,
+      status,
       tags,
       openPositions,
       category,
@@ -104,7 +109,7 @@ export const Update = async (req: Request, res: Response, next: NextFunction) =>
       'paymentFrequency',
       'description',
       'requirements',
-      'isOpen',
+      'status',
       'tags',
       'openPositions',
       'category',
@@ -232,14 +237,14 @@ export const ActiveJobsList = async (req: Request, res: Response, next: NextFunc
     const { filters, search } = getFiltersAndSearch(jobFilters as Filters[]);
 
     let where = {
-      isOpen: true,
+      status: 'new',
     } as any;
 
     if (filters.length) {
       where = {
         [Op.and]: [
           {
-            isOpen: true,
+            status: 'new',
             //@ts-ignore
             [Op.or]: filters,
           },
@@ -248,13 +253,13 @@ export const ActiveJobsList = async (req: Request, res: Response, next: NextFunc
     }
     if (search) {
       where = {
-        isOpen: true,
+        status: 'new',
         [Op.and]: [search],
       };
     }
     if (search && filters.length) {
       where = {
-        isOpen: true,
+        status: 'new',
         [Op.and]: [
           {
             [Op.or]: filters,
@@ -297,14 +302,13 @@ export const ActiveJobsList = async (req: Request, res: Response, next: NextFunc
 // List of jobs by the job-seeker(user) without filters
 export const UserBasedJobList = async (req: Request, res: Response, next: NextFunction) => {
   try {
-
     if (req.user && req.user.type === UserType.COMPANY) {
       const err = new BadRequestError('wrong user request');
       res.status(403).send(err);
     }
 
     //job-status: 'cancelled' || 'applied' || 'interviews'
-    const status = req.query.status as string;
+    const status: UserBasedJobStatus = req.query.status as UserBasedJobStatus;
     // sortBy
     const sortBy = req.query.sortBy ? req.query.sortBy : 'createdAt';
     const sortAs = req.query.sortAs ? (req.query.sortAs as string) : 'DESC';
@@ -339,9 +343,44 @@ export const UserBasedJobList = async (req: Request, res: Response, next: NextFu
     res.status(500).send({ message: error });
   }
 };
+export const CompanyBasedJobList = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (req.user && req.user.type === UserType.USER) {
+      const err = new BadRequestError('wrong user request');
+      res.status(403).send(err);
+    }
+
+    //job-status: 'new' || 'past' || 'interviews'
+    const status: CompanyBasedJobStatus = req.query.status as CompanyBasedJobStatus;
+    // sortBy
+    const sortBy = req.query.sortBy ? req.query.sortBy : 'createdAt';
+    const sortAs = req.query.sortAs ? (req.query.sortAs as string) : 'DESC';
+
+    const { limit, offset } = getPaginated(req.query);
+
+    const { company } = await getCompanyId(req.user.Company?.uuid as string);
+    const { count: total, rows: jobs } = await Job.findAndCountAll({
+      where: {
+        CompanyId: company?.id,
+        status,
+      },
+      offset: offset,
+      limit: limit,
+      order: [[sortBy as string, sortAs]],
+    });
+
+    res.status(201).send({ message: 'Success', data: jobs, total });
+  } catch (error) {
+    res.status(500).send({ message: error });
+  }
+};
 
 // list of jobs by the job-seeker(user) with filters
-export const UserBasedJobListWithFilters = async (req: Request, res: Response, next: NextFunction) => {
+export const UserBasedJobListWithFilters = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     if (req.user && req.user.type === UserType.COMPANY) {
       const err = new BadRequestError('wrong user request');
@@ -506,8 +545,6 @@ export const UserBasedJobListWithFilters = async (req: Request, res: Response, n
   }
 };
 
-
-
 const getUserId = async (uuid: string) => {
   const user = await User.scope('withId').findOne({
     where: {
@@ -517,11 +554,17 @@ const getUserId = async (uuid: string) => {
   });
   return { user };
 };
+const getCompanyId = async (uuid: string) => {
+  const company = await Company.scope('withId').findOne({
+    where: {
+      uuid,
+    },
+    attributes: ['id'],
+  });
+  return { company };
+};
 const getData = (instance: any) => {
   delete instance.dataValues.id;
   delete instance.dataValues.CompanyId;
   return { data: instance };
 };
-
-
-

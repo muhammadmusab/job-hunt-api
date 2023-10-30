@@ -15,24 +15,27 @@ export const up: Migration = async ({ context }: { context: Sequelize }) => {
       defaultValue: UUIDV4,
       unique: true,
     },
-    UserId:{
+    UserId: {
       type: DataTypes.INTEGER,
-      references:{
-        model:"Users",
-        key:"id"
-      }
+      references: {
+        model: 'Users',
+        key: 'id',
+      },
     },
-    JobId:{
+    JobId: {
       type: DataTypes.INTEGER,
-      references:{
-        model:"Jobs",
-        key:"id"
-      }
+      references: {
+        model: 'Jobs',
+        key: 'id',
+      },
     },
     status: {
       type: DataTypes.STRING,
       allowNull: false,
-      defaultValue: status.APPLIED as string
+      defaultValue: status.APPLIED as string,
+    },
+    additionalDocuments: {
+      type: DataTypes.ARRAY(DataTypes.STRING),
     },
     createdAt: {
       type: DataTypes.DATE,

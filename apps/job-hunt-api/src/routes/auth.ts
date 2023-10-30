@@ -1,6 +1,6 @@
 import express from 'express';
 import authMiddlewareFunction from '../middlewares/auth-middleware';
-import { validate } from '../middlewares/validate-middleware';
+// import { validate } from '../middlewares/validate-middleware';
 import {
   register,
   verifyEmailAddress,

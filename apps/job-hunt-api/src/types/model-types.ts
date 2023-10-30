@@ -1,3 +1,14 @@
+export enum CompanyBasedJobStatus {
+  NEW = 'new',
+  PAST = 'past',
+  INTERVIEWS = 'interviews',
+}
+export enum UserBasedJobStatus {
+  CANCELLED = 'cancelled',
+  APPLIED = 'applied',
+  INTERVIEWS = 'interviews',
+}
+
 export enum socialplatformType {
   FACEBOOK = 'facebook',
   LINKEDIN = 'linkedin',

@@ -18,7 +18,7 @@ interface JobModel extends Model<InferAttributes<JobModel>, InferCreationAttribu
   paymentFrequency: string;
   description: string;
   requirements: string;
-  isOpen: boolean;
+  status?: CreationOptional<string>;
   tags?: string[];
   openPositions: number;
   category: string[];
@@ -72,9 +72,9 @@ export const Job = sequelize.define<JobModel>(
       type: DataTypes.STRING,
       allowNull: false,
     },
-    isOpen: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
+    status: {
+      type: DataTypes.STRING,
+      defaultValue: 'new',
     },
     tags: {
       type: DataTypes.ARRAY(DataTypes.STRING),
