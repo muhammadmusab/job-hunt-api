@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import { BadRequestError } from '../../utils/api-errors';
 import { getValidUpdates } from '../../utils/validate-updates';
 import { Company } from '../../models/Company';
+import { getPaginated } from '../../utils/paginate';
 
 export const createCompanyArea = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -96,8 +97,8 @@ export const deleteCompanyArea = async (req: Request, res: Response, next: NextF
 export const listCompanyArea = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { company } = await getCompanyId(req.user.Company?.uuid as string);
-
-    const companyArea = await CompanyArea.findAll({
+    const { limit, offset } = getPaginated(req.query);
+    const { count: total, rows: companyArea } = await CompanyArea.findAndCountAll({
       where: {
         CompanyId: company?.id as number,
       },
@@ -109,9 +110,11 @@ export const listCompanyArea = async (req: Request, res: Response, next: NextFun
           model: Company,
         },
       ],
+      offset: offset,
+      limit: limit,
     });
 
-    res.status(201).send({ message: 'Success', data: companyArea });
+    res.status(201).send({ message: 'Success', data: companyArea,total });
   } catch (error) {
     res.status(500).send({ message: error });
   }

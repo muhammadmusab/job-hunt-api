@@ -87,6 +87,8 @@ export const listCompanyContact = async (req: Request, res: Response, next: Next
           model: Company,
         },
       ],
+      limit: 5,
+      order:[['createdAt','DESC']]
     });
 
     res.status(201).send({ message: 'Success', data: companyContact });

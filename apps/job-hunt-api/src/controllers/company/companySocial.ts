@@ -88,6 +88,8 @@ export const listCompanySocial = async (req: Request, res: Response, next: NextF
           model: Company,
         },
       ],
+      limit: 5,
+      order:[['createdAt','DESC']]
     });
 
     res.status(201).send({ message: 'Success', data: companySocial });

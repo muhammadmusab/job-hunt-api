@@ -105,6 +105,8 @@ export const listUserExperience = async (req: Request, res: Response, next: Next
           model: User,
         },
       ],
+      limit: 5,
+      order:[['createdAt','DESC']]
     });
 
     res.status(201).send({ message: 'Success', data: userExperiences });

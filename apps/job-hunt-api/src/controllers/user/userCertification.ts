@@ -118,6 +118,8 @@ export const listUserCertification = async (req: Request, res: Response, next: N
           model: User,
         },
       ],
+      limit: 5,
+      order:[['createdAt','DESC']]
     });
 
     res.status(201).send({ message: 'Success', data: userCertification });

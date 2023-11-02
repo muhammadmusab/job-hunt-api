@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import { BadRequestError } from '../../utils/api-errors';
 import { getValidUpdates } from '../../utils/validate-updates';
 import { User } from '../../models/User';
+import { getPaginated } from '../../utils/paginate';
 
 export const createUserSkill = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -99,8 +100,8 @@ export const deleteUserSkill = async (req: Request, res: Response, next: NextFun
 export const listUserSkill = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { user } = await getUserId(req.user.User?.uuid as string);
-
-    const userSkills = await UserSkill.findAll({
+    const { limit, offset } = getPaginated(req.query);
+    const { count: total, rows: userSkills } = await UserSkill.findAndCountAll({
       where: {
         UserId: user?.id as number,
       },
@@ -112,9 +113,11 @@ export const listUserSkill = async (req: Request, res: Response, next: NextFunct
           model: User,
         },
       ],
+      offset: offset,
+      limit: limit,
     });
 
-    res.status(201).send({ message: 'Success', data: userSkills });
+    res.status(201).send({ message: 'Success', data: userSkills,total });
   } catch (error) {
     res.status(500).send({ message: error });
   }
