@@ -27,7 +27,7 @@ export const up: Migration = async ({ context }: { context: Sequelize }) => {
       allowNull: false,
     },
     expiryDate: {
-      type: DataTypes.DATE,
+      type: DataTypes.DATEONLY,
       allowNull: false,
     },
     salary: {

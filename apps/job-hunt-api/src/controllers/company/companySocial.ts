@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import { BadRequestError } from '../../utils/api-errors';
 import { getValidUpdates } from '../../utils/validate-updates';
 import { Company } from '../../models/Company';
+import { getPaginated } from '../../utils/paginate';
 
 export const createCompanySocial = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -76,7 +77,12 @@ export const listCompanySocial = async (req: Request, res: Response, next: NextF
   try {
     const { company } = await getCompanyId(req.user.Company?.uuid as string);
 
-    const companySocial = await CompanySocial.findAll({
+    const { limit, offset } = getPaginated(req.query);
+    // sortBy
+    const sortBy = req.query.sortBy ? req.query.sortBy : 'createdAt';
+    const sortAs = req.query.sortAs ? (req.query.sortAs as string) : 'DESC';
+
+    const { count: total, rows: companySocial } = await CompanySocial.findAndCountAll({
       where: {
         CompanyId: company?.id as number,
       },
@@ -88,11 +94,12 @@ export const listCompanySocial = async (req: Request, res: Response, next: NextF
           model: Company,
         },
       ],
-      limit: 5,
-      order:[['createdAt','DESC']]
+      offset: offset,
+      limit: limit,
+      order: [[sortBy as string, sortAs]],
     });
 
-    res.status(201).send({ message: 'Success', data: companySocial });
+    res.status(201).send({ message: 'Success', data: companySocial, total });
   } catch (error) {
     res.status(500).send({ message: error });
   }

@@ -26,5 +26,5 @@ router.get('/signout', authMiddlewareFunction(), signout);
 router.post('/reset-password-mail', resetPasswordMail);
 router.post('/reset-password', resetPassword);
 
-router.get('/refresh-token', authMiddlewareFunction(), refreshToken);
+router.get('/refresh-token', authMiddlewareFunction(true), refreshToken);
 export default router;

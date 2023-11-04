@@ -49,7 +49,7 @@ export const Job = sequelize.define<JobModel>(
       allowNull: false,
     },
     expiryDate: {
-      type: DataTypes.DATE,
+      type: DataTypes.DATEONLY,
       allowNull: false,
     },
     salary: {

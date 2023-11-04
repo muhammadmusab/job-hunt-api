@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import { BadRequestError } from '../../utils/api-errors';
 import { getValidUpdates } from '../../utils/validate-updates';
 import { Company } from '../../models/Company';
+import { getPaginated } from '../../utils/paginate';
 
 export const createCompanyContact = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -75,7 +76,12 @@ export const listCompanyContact = async (req: Request, res: Response, next: Next
   try {
     const { company } = await getCompanyId(req.user.Company?.uuid as string);
 
-    const companyContact = await CompanyContact.findAll({
+    const { limit, offset } = getPaginated(req.query);
+    // sortBy
+    const sortBy = req.query.sortBy ? req.query.sortBy : 'createdAt';
+    const sortAs = req.query.sortAs ? (req.query.sortAs as string) : 'DESC';
+
+    const { count: total, rows: companyContact } = await CompanyContact.findAndCountAll({
       where: {
         CompanyId: company?.id as number,
       },
@@ -87,11 +93,12 @@ export const listCompanyContact = async (req: Request, res: Response, next: Next
           model: Company,
         },
       ],
-      limit: 5,
-      order:[['createdAt','DESC']]
+      offset: offset,
+      limit: limit,
+      order: [[sortBy as string, sortAs]],
     });
 
-    res.status(201).send({ message: 'Success', data: companyContact });
+    res.status(201).send({ message: 'Success', data: companyContact ,total});
   } catch (error) {
     res.status(500).send({ message: error });
   }

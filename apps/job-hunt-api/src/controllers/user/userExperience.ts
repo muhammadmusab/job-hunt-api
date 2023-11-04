@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import { BadRequestError } from '../../utils/api-errors';
 import { getValidUpdates } from '../../utils/validate-updates';
 import { User } from '../../models/User';
+import { getPaginated } from '../../utils/paginate';
 
 export const createUserExperience = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -92,8 +93,11 @@ export const deleteUserExperience = async (req: Request, res: Response, next: Ne
 export const listUserExperience = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { user } = await getUserId(req.user.User?.uuid as string);
-
-    const userExperiences = await UserExperience.findAll({
+    const { limit, offset } = getPaginated(req.query);
+    // sortBy
+    const sortBy = req.query.sortBy ? req.query.sortBy : 'createdAt';
+    const sortAs = req.query.sortAs ? (req.query.sortAs as string) : 'DESC';
+    const { count: total, rows: userExperiences } = await UserExperience.findAndCountAll({
       where: {
         UserId: user?.id as number,
       },
@@ -105,8 +109,9 @@ export const listUserExperience = async (req: Request, res: Response, next: Next
           model: User,
         },
       ],
-      limit: 5,
-      order:[['createdAt','DESC']]
+      offset: offset,
+      limit: limit,
+      order: [[sortBy as string, sortAs]],
     });
 
     res.status(201).send({ message: 'Success', data: userExperiences });

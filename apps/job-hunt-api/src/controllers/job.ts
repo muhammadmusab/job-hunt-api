@@ -15,6 +15,7 @@ import { getFiltersAndSearch } from '../utils/QueryFilters';
 import { Filters, operators } from '../types/sequelize-custom-types';
 import { User } from '../models/User';
 import { Company } from '../models/Company';
+import { join } from 'path';
 
 export const Create = async (req: Request, res: Response, next: NextFunction) => {
   // missing properties
@@ -237,14 +238,14 @@ export const ActiveJobsList = async (req: Request, res: Response, next: NextFunc
     const { filters, search } = getFiltersAndSearch(jobFilters as Filters[]);
 
     let where = {
-      status: 'new',
+      status: CompanyBasedJobStatus.NEW,
     } as any;
 
     if (filters.length) {
       where = {
         [Op.and]: [
           {
-            status: 'new',
+            status: CompanyBasedJobStatus.NEW,
             //@ts-ignore
             [Op.or]: filters,
           },
@@ -253,13 +254,13 @@ export const ActiveJobsList = async (req: Request, res: Response, next: NextFunc
     }
     if (search) {
       where = {
-        status: 'new',
+        status: CompanyBasedJobStatus.NEW,
         [Op.and]: [search],
       };
     }
     if (search && filters.length) {
       where = {
-        status: 'new',
+        status: CompanyBasedJobStatus.NEW,
         [Op.and]: [
           {
             [Op.or]: filters,
@@ -332,37 +333,6 @@ export const UserBasedJobList = async (req: Request, res: Response, next: NextFu
     const { count: total, rows: jobs } = await Job.findAndCountAll({
       where: {
         id: foundJobIds as number[],
-      },
-      offset: offset,
-      limit: limit,
-      order: [[sortBy as string, sortAs]],
-    });
-
-    res.status(201).send({ message: 'Success', data: jobs, total });
-  } catch (error) {
-    res.status(500).send({ message: error });
-  }
-};
-export const CompanyBasedJobList = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    if (req.user && req.user.type === UserType.USER) {
-      const err = new BadRequestError('wrong user request');
-      res.status(403).send(err);
-    }
-
-    //job-status: 'new' || 'past' || 'interviews'
-    const status: CompanyBasedJobStatus = req.query.status as CompanyBasedJobStatus;
-    // sortBy
-    const sortBy = req.query.sortBy ? req.query.sortBy : 'createdAt';
-    const sortAs = req.query.sortAs ? (req.query.sortAs as string) : 'DESC';
-
-    const { limit, offset } = getPaginated(req.query);
-
-    const { company } = await getCompanyId(req.user.Company?.uuid as string);
-    const { count: total, rows: jobs } = await Job.findAndCountAll({
-      where: {
-        CompanyId: company?.id,
-        status,
       },
       offset: offset,
       limit: limit,
@@ -540,6 +510,266 @@ export const UserBasedJobListWithFilters = async (
     const filtersData = { experience, employementType };
 
     res.status(201).send({ message: 'Success', data: jobs, total, filtersData });
+  } catch (error) {
+    res.status(500).send({ message: error });
+  }
+};
+
+// list of jobs based on status for company with filters
+export const CompanyBasedJobList = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (req.user && req.user.type === UserType.USER) {
+      const err = new BadRequestError('wrong user request');
+      res.status(403).send(err);
+    }
+
+    const { company } = await getCompanyId(req.user.Company?.uuid as string);
+
+    //job-status: 'new' || 'past' || 'interviews'
+    const status: CompanyBasedJobStatus = req.query.status as CompanyBasedJobStatus;
+    // if user clicks on past tab on FE
+    if (status === 'past') {
+      // get current date
+      const current_date = new Date().toISOString().slice(0, 10);
+      // find jobs (uuids) with current date greater then  expiryDate  (which means job is expired)
+      const jobs = await Job.findAll({
+        where: {
+          CompanyId: company?.id,
+          expiryDate: {
+            [Op.lt]: current_date,
+          },
+        },
+        include: ['uuid'],
+      });
+      // array of uuids of jobs found with expiry date
+      const jobIds = jobs.map((item) => item.uuid);
+      // updating the status of the jobs with expirydate found above
+      const result = await Job.update(
+        {
+          status:  CompanyBasedJobStatus.PAST,
+        },
+        {
+          where: {
+            uuid: jobIds,
+          },
+        },
+      );
+      if (!result[0]) {
+        const err = new BadRequestError('Could not update the jobs data');
+        res.status(err.status).send({ message: err.message });
+        return;
+      }
+    }
+    // sortBy
+    const sortBy = req.query.sortBy ? req.query.sortBy : 'createdAt';
+    const sortAs = req.query.sortAs ? (req.query.sortAs as string) : 'DESC';
+
+    const { limit, offset } = getPaginated(req.query);
+
+    const { count: total, rows: jobs } = await Job.findAndCountAll({
+      where: {
+        CompanyId: company?.id,
+        status,
+      },
+      offset: offset,
+      limit: limit,
+      order: [[sortBy as string, sortAs]],
+    });
+
+    res.status(201).send({ message: 'Success', data: jobs, total });
+  } catch (error) {
+    res.status(500).send({ message: error });
+  }
+};
+
+// set job status as 'interviews' from company
+export const UpdateCompanyBasedJobStatus = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    if (req.user && req.user.type === UserType.USER) {
+      const err = new BadRequestError('wrong user request');
+      res.status(403).send(err);
+    }
+    // job uuid
+    const { uid } = req.params;
+    const { company } = await getCompanyId(req.user.Company?.uuid as string);
+
+    const result = await Job.update(
+      {
+        status: CompanyBasedJobStatus.INTERVIEWS,
+      },
+      {
+        where: {
+          uuid: uid,
+          CompanyId: company?.id,
+        },
+      },
+    );
+    if (!result[0]) {
+      const err = new BadRequestError('Could not update the job data');
+      res.status(err.status).send({ message: err.message });
+      return;
+    }
+
+    res.status(201).send({ message: 'Success', data: result });
+  } catch (error) {
+    res.status(500).send({ message: error });
+  }
+};
+
+// assign user for job interview and set status of user as interview
+// company will assign this status
+export const AssignUserJobInterview = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (req.user && req.user.type === UserType.USER) {
+      const err = new BadRequestError('wrong user request');
+      res.status(403).send(err);
+    }
+    // job uuid
+
+    const { userUniqueId, jobUniqueId } = req.body;
+    const { company } = await getCompanyId(req.user.Company?.uuid as string);
+    const { user } = await getUserId(userUniqueId);
+
+    const job = await Job.scope('withId').findOne({
+      where: {
+        uuid: jobUniqueId,
+      },
+    });
+
+    if (!job) {
+      const err = new BadRequestError('Job data not found');
+      res.status(err.status).send({ message: err.message });
+      return;
+    }
+
+    const result = await UserJobs.update(
+      {
+        status: CompanyBasedJobStatus.INTERVIEWS,
+      },
+      {
+        where: {
+          JobId: job?.id,
+          UserId: user?.id,
+        },
+      },
+    );
+
+    if (!result[0]) {
+      const err = new BadRequestError('Could not update the job data');
+      res.status(err.status).send({ message: err.message });
+      return;
+    }
+
+    res.status(201).send({ message: 'Success', data: result });
+  } catch (error) {
+    res.status(500).send({ message: error });
+  }
+};
+
+// list of jobs with its applicants
+export const UserJobsList = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (req.user && req.user.type === UserType.USER) {
+      const err = new BadRequestError('wrong user request');
+      res.status(403).send(err);
+    }
+
+    // sortBy
+    const sortBy = req.query.sortBy ? req.query.sortBy : 'createdAt';
+    const sortAs = req.query.sortAs ? (req.query.sortAs as string) : 'DESC';
+
+    const { limit, offset } = getPaginated(req.query);
+    const { company } = await getCompanyId(req.user.Company?.uuid as string);
+    const { jobUniqueId } = req.body;
+
+    const job = await Job.scope('withId').findOne({
+      where: {
+        uuid: jobUniqueId,
+      },
+    });
+    
+    const { count: total, rows: jobs } = await UserJobs.findAndCountAll({
+      where: {
+        JobId: job?.id,
+      },
+      include: [
+        {
+          model: Job,
+          required: true,
+          where: {
+            CompanyId: company?.id,
+          },
+        },
+        {
+          model: User,
+        },
+      ],
+      attributes: [
+        'Job.id',
+        'User.id',
+        'UserId',
+        'JobId',
+        'id',
+        'CompanyId',
+        'additionalDocuments',
+      ],
+      offset: offset,
+      limit: limit,
+      order: [[sortBy as string, sortAs]],
+    });
+
+    res.status(201).send({ message: 'Success', data: jobs, total });
+  } catch (error) {
+    res.status(500).send({ message: error });
+  }
+};
+
+// user will set status as cancel for job user applied
+export const setUserJobStatusCancelled = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (req.user && req.user.type === UserType.COMPANY) {
+      const err = new BadRequestError('wrong user request');
+      res.status(403).send(err);
+    }
+    // job uuid
+    const { uid } = req.params;
+    const { user } = await getUserId(req.user.User?.uuid as string);
+
+    const job = await Job.scope('withId').findOne({
+      where: {
+        uuid: uid,
+      },
+    });
+
+    if (!job) {
+      const err = new BadRequestError('Job data not found');
+      res.status(err.status).send({ message: err.message });
+      return;
+    }
+
+    const result = await UserJobs.update(
+      {
+        status: UserBasedJobStatus.CANCELLED,
+      },
+      {
+        where: {
+          JobId: job?.id,
+          UserId: user?.id,
+        },
+      },
+    );
+
+    if (!result[0]) {
+      const err = new BadRequestError('Could not update the job data');
+      res.status(err.status).send({ message: err.message });
+      return;
+    }
+
+    res.status(201).send({ message: 'Success', data: result });
   } catch (error) {
     res.status(500).send({ message: error });
   }

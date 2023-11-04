@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import { BadRequestError } from '../../utils/api-errors';
 import { getValidUpdates } from '../../utils/validate-updates';
 import { User } from '../../models/User';
+import { getPaginated } from '../../utils/paginate';
 
 export const createUserEducation = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -86,8 +87,11 @@ export const deleteUserEducation = async (req: Request, res: Response, next: Nex
 export const listUserEducation = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { user } = await getUserId(req.user.User?.uuid as string);
-
-    const userEducation = await UserEducation.findAll({
+    const { limit, offset } = getPaginated(req.query);
+    // sortBy
+    const sortBy = req.query.sortBy ? req.query.sortBy : 'createdAt';
+    const sortAs = req.query.sortAs ? (req.query.sortAs as string) : 'DESC';
+    const { count: total, rows: userEducation } = await UserEducation.findAndCountAll({
       where: {
         UserId: user?.id as number,
       },
@@ -99,11 +103,12 @@ export const listUserEducation = async (req: Request, res: Response, next: NextF
           model: User,
         },
       ],
-      limit: 5,
-      order:[['createdAt','DESC']]
+      offset: offset,
+      limit: limit,
+      order: [[sortBy as string, sortAs]],
     });
 
-    res.status(201).send({ message: 'Success', data: userEducation });
+    res.status(201).send({ message: 'Success', data: userEducation, total });
   } catch (error) {
     res.status(500).send({ message: error });
   }

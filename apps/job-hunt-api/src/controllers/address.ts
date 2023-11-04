@@ -5,6 +5,7 @@ import { getValidUpdates } from '../utils/validate-updates';
 import { User } from '../models/User';
 import { Company } from '../models/Company';
 import { UserType } from '../types/model-types';
+import { getPaginated } from '../utils/paginate';
 
 export const Create = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -110,7 +111,7 @@ export const List = async (req: Request, res: Response, next: NextFunction) => {
     let user = null;
 
     let idType = null;
-    let addresses = null;
+
     let model = null;
 
     if (req.user.type === UserType.USER) {
@@ -118,12 +119,17 @@ export const List = async (req: Request, res: Response, next: NextFunction) => {
       idType = 'UserId';
       model = User;
     } else {
-      user = await  getCompanyId(req.user.Company?.uuid as string);
+      user = await getCompanyId(req.user.Company?.uuid as string);
       idType = 'CompanyId';
       model = Company;
     }
 
-    addresses = await Address.findAll({
+    const { limit, offset } = getPaginated(req.query);
+    // sortBy
+    const sortBy = req.query.sortBy ? req.query.sortBy : 'createdAt';
+    const sortAs = req.query.sortAs ? (req.query.sortAs as string) : 'DESC';
+
+    const { count: total, rows: addresses } = await Address.findAndCountAll({
       where: {
         [idType]: user?.id,
       },
@@ -135,11 +141,12 @@ export const List = async (req: Request, res: Response, next: NextFunction) => {
           model,
         },
       ],
-      limit: 5,
-      order:[['createdAt','DESC']]
+      offset: offset,
+      limit: limit,
+      order: [[sortBy as string, sortAs]],
     });
 
-    res.status(201).send({ message: 'Success', data: addresses });
+    res.status(201).send({ message: 'Success', data: addresses, total });
   } catch (error: any) {
     console.log(error.message);
     res.status(500).send({ message: error });

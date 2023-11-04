@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import { BadRequestError } from '../../utils/api-errors';
 import { getValidUpdates } from '../../utils/validate-updates';
 import { User } from '../../models/User';
+import { getPaginated } from '../../utils/paginate';
 
 export const createUserCertification = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -105,8 +106,11 @@ export const deleteUserCertification = async (req: Request, res: Response, next:
 export const listUserCertification = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { user } = await getUserId(req.user.User?.uuid as string);
-
-    const userCertification = await UserCertification.findAll({
+    const { limit, offset } = getPaginated(req.query);
+    // sortBy
+    const sortBy = req.query.sortBy ? req.query.sortBy : 'createdAt';
+    const sortAs = req.query.sortAs ? (req.query.sortAs as string) : 'DESC';
+    const { count: total, rows: userCertification } = await UserCertification.findAndCountAll({
       where: {
         UserId: user?.id as number,
       },
@@ -118,11 +122,12 @@ export const listUserCertification = async (req: Request, res: Response, next: N
           model: User,
         },
       ],
-      limit: 5,
-      order:[['createdAt','DESC']]
+      offset: offset,
+      limit: limit,
+      order: [[sortBy as string, sortAs]],
     });
 
-    res.status(201).send({ message: 'Success', data: userCertification });
+    res.status(201).send({ message: 'Success', data: userCertification, total });
   } catch (error) {
     res.status(500).send({ message: error });
   }
