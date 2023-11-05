@@ -60,7 +60,7 @@ export const Address = sequelize.define<AddressModel>('Address', {
   },
 },{
   defaultScope: {
-    attributes: { exclude: ['id'] },
+    attributes: { exclude: ['id','CompanyId','UserId'] },
   },
   scopes: {
     withId: {

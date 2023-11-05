@@ -78,7 +78,7 @@ export const updateUserCertification = async (req: Request, res: Response, next:
       res.status(err.status).send({ message: err.message });
       return;
     }
-    res.status(201).send({ message: 'Success', data: result });
+    res.send({ message: 'Success', data: result });
   } catch (error) {
     res.status(500).send({ message: error });
   }
@@ -94,7 +94,7 @@ export const deleteUserCertification = async (req: Request, res: Response, next:
       },
     });
     if (result === 1) {
-      res.status(201).send({ message: 'Success' });
+      res.send({ message: 'Success' });
     } else {
       const err = new BadRequestError('Bad Request');
       res.status(err.status).send({ message: err.message });
@@ -127,7 +127,7 @@ export const listUserCertification = async (req: Request, res: Response, next: N
       order: [[sortBy as string, sortAs]],
     });
 
-    res.status(201).send({ message: 'Success', data: userCertification, total });
+    res.send({ message: 'Success', data: userCertification, total });
   } catch (error) {
     res.status(500).send({ message: error });
   }

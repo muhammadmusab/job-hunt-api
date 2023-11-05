@@ -43,7 +43,7 @@ export const CompanySocial = sequelize.define<CompanySocialModel>(
   },
   {
     defaultScope: {
-      attributes: { exclude: ['id'] },
+      attributes: { exclude: ['id','CompanyId'] },
     },
     scopes: {
       withId: {

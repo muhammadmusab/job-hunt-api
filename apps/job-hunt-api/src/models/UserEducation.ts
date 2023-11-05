@@ -62,7 +62,7 @@ export const UserEducation = sequelize.define<UserEducationModel>(
   },
   {
     defaultScope: {
-      attributes: { exclude: ['id'] },
+      attributes: { exclude: ['id','UserId'] },
     },
     scopes: {
       withId: {

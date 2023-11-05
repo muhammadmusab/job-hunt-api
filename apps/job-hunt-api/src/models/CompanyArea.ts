@@ -36,7 +36,7 @@ export const CompanyArea = sequelize.define<CompanyAreaModel>(
   },
   {
     defaultScope: {
-      attributes: { exclude: ['id'] },
+      attributes: { exclude: ['id','CompanyId'] },
     },
     scopes: {
       withId: {

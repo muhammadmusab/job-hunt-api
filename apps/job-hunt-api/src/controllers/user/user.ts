@@ -44,7 +44,7 @@ export const Get = async (req: Request, res: Response, next: NextFunction) => {
       ],
     });
 
-    res.status(201).send({ message: 'Success', data: user });
+    res.send({ message: 'Success', data: user });
   } catch (error) {
     res.status(500).send({ message: error });
   }
@@ -102,7 +102,7 @@ export const Update = async (req: Request, res: Response, next: NextFunction) =>
       ],
     });
 
-    res.status(201).send({ message: 'Success', data: user });
+    res.send({ message: 'Success', data: user });
   } catch (error) {
     res.status(500).send({ message: error });
   }
@@ -115,7 +115,7 @@ export const Delete = async (req: Request, res: Response, next: NextFunction) =>
       },
     });
     if (user === 1) {
-      res.status(201).send({ message: 'Success' });
+      res.send({ message: 'Success' });
     } else {
       const err = new BadRequestError('Bad Request');
       res.status(err.status).send({ message: err.message });

@@ -53,7 +53,7 @@ export const Apply = async (req: Request, res: Response, next: NextFunction) => 
     }
 
     if (userJob) {
-      res.status(201).send({ message: 'Success', data: userJob });
+      res.send({ message: 'Success', data: userJob });
     } else {
       res.status(500).send({ message: 'Internal Server Error' });
     }

@@ -65,7 +65,7 @@ export const UserExperience = sequelize.define<UserExperienceModel>(
   },
   {
     defaultScope: {
-      attributes: { exclude: ['id'] },
+      attributes: { exclude: ['id','UserId'] },
     },
     scopes: {
       withId: {

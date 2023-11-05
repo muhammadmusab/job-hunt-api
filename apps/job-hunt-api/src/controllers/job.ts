@@ -15,11 +15,8 @@ import { getFiltersAndSearch } from '../utils/QueryFilters';
 import { Filters, operators } from '../types/sequelize-custom-types';
 import { User } from '../models/User';
 import { Company } from '../models/Company';
-import { join } from 'path';
 
 export const Create = async (req: Request, res: Response, next: NextFunction) => {
-  // missing properties
-  //workLevel,
   try {
     const {
       title,
@@ -91,7 +88,7 @@ export const Get = async (req: Request, res: Response, next: NextFunction) => {
     if (job) {
       delete job.dataValues.id;
     }
-    res.status(201).send({ message: 'Success', data: job });
+    res.send({ message: 'Success', data: job });
   } catch (error) {
     res.status(500).send({ message: error });
   }
@@ -140,7 +137,7 @@ export const Update = async (req: Request, res: Response, next: NextFunction) =>
       return;
     }
 
-    res.status(201).send({ message: 'Success', data: result });
+    res.send({ message: 'Success', data: result });
   } catch (error) {
     res.status(500).send({ message: error });
   }
@@ -164,7 +161,7 @@ export const Delete = async (req: Request, res: Response, next: NextFunction) =>
     });
 
     if (result === 1) {
-      res.status(201).send({ message: 'Success' });
+      res.send({ message: 'Success' });
     } else {
       const err = new BadRequestError('Bad Request');
       res.status(err.status).send({ message: err.message });
@@ -294,7 +291,7 @@ export const ActiveJobsList = async (req: Request, res: Response, next: NextFunc
     });
     const filtersData = { experience, employementType };
 
-    res.status(201).send({ message: 'Success', data: jobs, total, filtersData });
+    res.send({ message: 'Success', data: jobs, total, filtersData });
   } catch (error) {
     res.status(500).send({ message: error });
   }
@@ -339,7 +336,7 @@ export const UserBasedJobList = async (req: Request, res: Response, next: NextFu
       order: [[sortBy as string, sortAs]],
     });
 
-    res.status(201).send({ message: 'Success', data: jobs, total });
+    res.send({ message: 'Success', data: jobs, total });
   } catch (error) {
     res.status(500).send({ message: error });
   }
@@ -509,7 +506,7 @@ export const UserBasedJobListWithFilters = async (
     });
     const filtersData = { experience, employementType };
 
-    res.status(201).send({ message: 'Success', data: jobs, total, filtersData });
+    res.send({ message: 'Success', data: jobs, total, filtersData });
   } catch (error) {
     res.status(500).send({ message: error });
   }
@@ -576,7 +573,7 @@ export const CompanyBasedJobList = async (req: Request, res: Response, next: Nex
       order: [[sortBy as string, sortAs]],
     });
 
-    res.status(201).send({ message: 'Success', data: jobs, total });
+    res.send({ message: 'Success', data: jobs, total });
   } catch (error) {
     res.status(500).send({ message: error });
   }
@@ -614,7 +611,7 @@ export const UpdateCompanyBasedJobStatus = async (
       return;
     }
 
-    res.status(201).send({ message: 'Success', data: result });
+    res.send({ message: 'Success', data: result });
   } catch (error) {
     res.status(500).send({ message: error });
   }
@@ -664,7 +661,7 @@ export const AssignUserJobInterview = async (req: Request, res: Response, next: 
       return;
     }
 
-    res.status(201).send({ message: 'Success', data: result });
+    res.send({ message: 'Success', data: result });
   } catch (error) {
     res.status(500).send({ message: error });
   }
@@ -722,7 +719,7 @@ export const UserJobsList = async (req: Request, res: Response, next: NextFuncti
       order: [[sortBy as string, sortAs]],
     });
 
-    res.status(201).send({ message: 'Success', data: jobs, total });
+    res.send({ message: 'Success', data: jobs, total });
   } catch (error) {
     res.status(500).send({ message: error });
   }
@@ -769,7 +766,7 @@ export const setUserJobStatusCancelled = async (req: Request, res: Response, nex
       return;
     }
 
-    res.status(201).send({ message: 'Success', data: result });
+    res.send({ message: 'Success', data: result });
   } catch (error) {
     res.status(500).send({ message: error });
   }

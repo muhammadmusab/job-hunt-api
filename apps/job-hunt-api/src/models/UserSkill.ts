@@ -39,7 +39,7 @@ export const UserSkill = sequelize.define<UserSkillModel>(
   },
   {
     defaultScope: {
-      attributes: { exclude: ['id'] },
+      attributes: { exclude: ['id','UserId'] },
     },
     scopes: {
       withId: {

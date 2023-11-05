@@ -69,7 +69,7 @@ export const updateCompanyArea = async (req: Request, res: Response, next: NextF
       res.status(err.status).send({ message: err.message });
       return;
     }
-    res.status(201).send({ message: 'Success', data: result });
+    res.send({ message: 'Success', data: result });
   } catch (error) {
     res.status(500).send({ message: error });
   }
@@ -85,7 +85,7 @@ export const deleteCompanyArea = async (req: Request, res: Response, next: NextF
       },
     });
     if (result === 1) {
-      res.status(201).send({ message: 'Success' });
+      res.send({ message: 'Success' });
     } else {
       const err = new BadRequestError('Bad Request');
       res.status(err.status).send({ message: err.message });
@@ -114,7 +114,7 @@ export const listCompanyArea = async (req: Request, res: Response, next: NextFun
       limit: limit,
     });
 
-    res.status(201).send({ message: 'Success', data: companyArea,total });
+    res.send({ message: 'Success', data: companyArea,total });
   } catch (error) {
     res.status(500).send({ message: error });
   }

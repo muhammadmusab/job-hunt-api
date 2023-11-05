@@ -69,7 +69,7 @@ export const UserCertification = sequelize.define<UserCertificationModel>(
   },
   {
     defaultScope: {
-      attributes: { exclude: ['id'] },
+      attributes: { exclude: ['id','UserId'] },
     },
     scopes: {
       withId: {

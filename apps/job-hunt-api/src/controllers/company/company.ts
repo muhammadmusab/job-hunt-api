@@ -9,30 +9,44 @@ import { Address } from '../../models/Address';
 
 export const Get = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const company = await Company.findOne({
+    let company = await getCompanyId(req.user.Company?.uuid as string);
+    let data = await Company.findOne({
       where: {
         uuid: req.user.Company?.uuid,
       },
       include: [
         {
-          model: CompanySocial,
+          model: CompanyArea,
+          attributes: {
+            exclude: ['CompanyId', 'id'],
+          },
         },
         {
           model: CompanyContact,
+          attributes: {
+            exclude: ['CompanyId', 'id'],
+          },
         },
         {
-          model: CompanyArea,
+          model: CompanySocial,
+          attributes: {
+            exclude: ['CompanyId', 'id'],
+          },
         },
         {
           model: Address,
+          required: false,
           where: {
-            CompanyId: req.user.Company?.id,
+            CompanyId: company?.id,
+          },
+          attributes: {
+            exclude: ['CompanyId', 'id'],
           },
         },
       ],
     });
 
-    res.status(201).send({ message: 'Success', data: company });
+    res.send({ message: 'Success', data });
   } catch (error) {
     res.status(500).send({ message: error });
   }
@@ -56,29 +70,45 @@ export const Update = async (req: Request, res: Response, next: NextFunction) =>
       res.status(err.status).send({ message: err.message });
       return;
     }
-    let company = await Company.findOne({
+
+    let company = await getCompanyId(req.user.Company?.uuid as string);
+
+    let data = await Company.findOne({
       where: {
         uuid: req.user.Company?.uuid,
       },
       include: [
         {
           model: CompanyArea,
+          attributes: {
+            exclude: ['CompanyId', 'id'],
+          },
         },
         {
           model: CompanyContact,
+          attributes: {
+            exclude: ['CompanyId', 'id'],
+          },
         },
         {
           model: CompanySocial,
+          attributes: {
+            exclude: ['CompanyId', 'id'],
+          },
         },
         {
           model: Address,
+          required: false,
           where: {
-            CompanyId: req.user.Company?.id,
+            CompanyId: company?.id,
+          },
+          attributes: {
+            exclude: ['CompanyId', 'id'],
           },
         },
       ],
     });
-    res.status(201).send({ message: 'Success', data: company });
+    res.send({ message: 'Success', data });
   } catch (error) {
     res.status(500).send({ message: error });
   }
@@ -91,7 +121,7 @@ export const Delete = async (req: Request, res: Response, next: NextFunction) =>
       },
     });
     if (result === 1) {
-      res.status(201).send({ message: 'Success' });
+      res.send({ message: 'Success' });
     } else {
       const err = new BadRequestError('Bad Request');
       res.status(err.status).send({ message: err.message });
@@ -99,4 +129,14 @@ export const Delete = async (req: Request, res: Response, next: NextFunction) =>
   } catch (error) {
     res.status(500).send({ message: error });
   }
+};
+
+const getCompanyId = async (uuid: string) => {
+  const company = await Company.scope('withId').findOne({
+    where: {
+      uuid,
+    },
+    attributes: ['id'],
+  });
+  return company;
 };

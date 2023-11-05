@@ -72,7 +72,7 @@ export const updateUserSkill = async (req: Request, res: Response, next: NextFun
       res.status(err.status).send({ message: err.message });
       return;
     }
-    res.status(201).send({ message: 'Success', data: result });
+    res.send({ message: 'Success', data: result });
   } catch (error) {
     res.status(500).send({ message: error });
   }
@@ -88,7 +88,7 @@ export const deleteUserSkill = async (req: Request, res: Response, next: NextFun
       },
     });
     if (result === 1) {
-      res.status(201).send({ message: 'Success' });
+      res.send({ message: 'Success' });
     } else {
       const err = new BadRequestError('Bad Request');
       res.status(err.status).send({ message: err.message });
@@ -117,7 +117,7 @@ export const listUserSkill = async (req: Request, res: Response, next: NextFunct
       limit: limit,
     });
 
-    res.status(201).send({ message: 'Success', data: userSkills,total });
+    res.send({ message: 'Success', data: userSkills,total });
   } catch (error) {
     res.status(500).send({ message: error });
   }

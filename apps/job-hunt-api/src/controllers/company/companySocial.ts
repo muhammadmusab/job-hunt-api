@@ -48,7 +48,7 @@ export const updateCompanySocial = async (req: Request, res: Response, next: Nex
       res.status(err.status).send({ message: err.message });
       return;
     }
-    res.status(201).send({ message: 'Success', data: result });
+    res.send({ message: 'Success', data: result });
   } catch (error) {
     res.status(500).send({ message: error });
   }
@@ -64,7 +64,7 @@ export const deleteCompanySocial = async (req: Request, res: Response, next: Nex
       },
     });
     if (result === 1) {
-      res.status(201).send({ message: 'Success' });
+      res.send({ message: 'Success' });
     } else {
       const err = new BadRequestError('Bad Request');
       res.status(err.status).send({ message: err.message });
@@ -99,7 +99,7 @@ export const listCompanySocial = async (req: Request, res: Response, next: NextF
       order: [[sortBy as string, sortAs]],
     });
 
-    res.status(201).send({ message: 'Success', data: companySocial, total });
+    res.send({ message: 'Success', data: companySocial, total });
   } catch (error) {
     res.status(500).send({ message: error });
   }

@@ -62,7 +62,7 @@ export const updateUserExperience = async (req: Request, res: Response, next: Ne
       res.status(err.status).send({ message: err.message });
       return;
     }
-    res.status(201).send({ message: 'Success', data: result });
+    res.send({ message: 'Success', data: result });
   } catch (error) {
     res.status(500).send({ message: error });
   }
@@ -81,7 +81,7 @@ export const deleteUserExperience = async (req: Request, res: Response, next: Ne
     });
 
     if (result === 1) {
-      res.status(201).send({ message: 'Success' });
+      res.send({ message: 'Success' });
     } else {
       const err = new BadRequestError('Bad Request');
       res.status(err.status).send({ message: err.message });
@@ -114,7 +114,7 @@ export const listUserExperience = async (req: Request, res: Response, next: Next
       order: [[sortBy as string, sortAs]],
     });
 
-    res.status(201).send({ message: 'Success', data: userExperiences });
+    res.send({ message: 'Success', data: userExperiences });
   } catch (error) {
     res.status(500).send({ message: error });
   }

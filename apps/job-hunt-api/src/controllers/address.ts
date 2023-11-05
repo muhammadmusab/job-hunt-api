@@ -17,7 +17,6 @@ export const Create = async (req: Request, res: Response, next: NextFunction) =>
 
     if (req.user.type === UserType.USER) user = await getUserId(req.user.User?.uuid as string);
     else company = await getCompanyId(req.user.Company?.uuid as string);
-    console.log('running', req.user);
     let body = {
       UserId: null,
       CompanyId: null,
@@ -68,13 +67,16 @@ export const Update = async (req: Request, res: Response, next: NextFunction) =>
         },
       },
     );
-
+      console.log(result[0])
+      console.log(idType)
+      console.log(user?.id)
+      console.log(validBody)
     if (!result[0]) {
       const err = new BadRequestError('Could not update the address data');
       res.status(err.status).send({ message: err.message });
       return;
     }
-    res.status(201).send({ message: 'Success', data: result });
+    res.send({ message: 'Success', data: result });
   } catch (error) {
     res.status(500).send({ message: error });
   }
@@ -97,7 +99,7 @@ export const Delete = async (req: Request, res: Response, next: NextFunction) =>
       },
     });
     if (result === 1) {
-      res.status(201).send({ message: 'Success' });
+      res.send({ message: 'Success' });
     } else {
       const err = new BadRequestError('Bad Request');
       res.status(err.status).send({ message: err.message });
@@ -146,7 +148,7 @@ export const List = async (req: Request, res: Response, next: NextFunction) => {
       order: [[sortBy as string, sortAs]],
     });
 
-    res.status(201).send({ message: 'Success', data: addresses, total });
+    res.send({ message: 'Success', data: addresses, total });
   } catch (error: any) {
     console.log(error.message);
     res.status(500).send({ message: error });

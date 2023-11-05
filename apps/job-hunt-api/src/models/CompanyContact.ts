@@ -51,7 +51,7 @@ export const CompanyContact = sequelize.define<CompanyContactModel>(
   },
   {
     defaultScope: {
-      attributes: { exclude: ['id'] },
+      attributes: { exclude: ['id','CompanyId'] },
     },
     scopes: {
       withId: {

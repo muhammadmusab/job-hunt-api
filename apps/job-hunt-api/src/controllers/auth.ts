@@ -139,7 +139,7 @@ export const ResendVerificationMail = async (req: Request, res: Response, next: 
     if (result.rejected) {
       message = 'Error, Failed to send an email';
     }
-    res.status(201).send({ message });
+    res.send({ message });
   } catch (error) {
     // next(error);
     res.status(500).send({ message: error });
@@ -229,7 +229,7 @@ export const googleSignin = async (req: Request, res: Response, next: NextFuncti
 
       const token = await auth.generateMailToken();
       await generateVerificationMail(auth.email, token);
-      res.status(201).send({ message: 'Success', data: auth });
+      res.send({ message: 'Success', data: auth });
       return;
     } else {
       // if auth-user already exists
