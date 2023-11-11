@@ -1,4 +1,4 @@
-import { RequestValidationError } from "@codelab/api-errors";
+import { RequestValidationError } from "../utils/api-errors";
 import { Request, Response, NextFunction } from "express";
 import { ValidationError } from "yup";
 

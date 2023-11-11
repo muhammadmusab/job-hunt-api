@@ -18,25 +18,33 @@ export const up: Migration = async ({ context }: { context: Sequelize }) => {
       type: DataTypes.STRING,
       allowNull: false,
     },
+    industry: {
+      type: DataTypes.STRING,
+    },
+    description: {
+      type: DataTypes.STRING,
+    },
+    website: {
+      type: DataTypes.STRING,
+    },
+    numberOfEmployees: {
+      type: DataTypes.INTEGER,
+    },
+    hiring: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
     vatNumber: {
       type: DataTypes.STRING,
-      allowNull:false
+      allowNull: false,
     },
     foundationYear: {
       type: DataTypes.STRING,
-      allowNull:false
-    },
-    email: {
-      type: DataTypes.STRING,
       allowNull: false,
-      unique: true,
-      validate: {
-        isEmail: true,
-      },
     },
     address: {
       type: DataTypes.STRING,
-      allowNull:false
+      allowNull: false,
     },
     contact: {
       type: DataTypes.STRING,

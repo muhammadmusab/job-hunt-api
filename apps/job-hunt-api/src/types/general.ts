@@ -1,5 +1,4 @@
 import { UserType } from './model-types';
-
 export interface IAuthAttrs {
   id?: number;
   email: string;

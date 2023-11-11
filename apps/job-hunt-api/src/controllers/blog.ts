@@ -1,7 +1,7 @@
 import { Blog } from '../models/Blog';
 import { Request, Response, NextFunction } from 'express';
 import { UserType, AuthType } from '../types/model-types';
-import { BadRequestError } from '@codelab/api-errors';
+import { BadRequestError } from '../utils/api-errors';
 import { getValidUpdates } from '../utils/validate-updates';
 import { getPaginated } from '../utils/paginate';
 import sequelize, { Op } from 'sequelize';
@@ -39,7 +39,7 @@ export const Get = async (req: Request, res: Response, next: NextFunction) => {
       },
     });
 
-    res.status(201).send({ message: 'Success', data: blog });
+    res.send({ message: 'Success', data: blog });
   } catch (error) {
     res.status(500).send({ message: error });
   }
@@ -75,7 +75,7 @@ export const Update = async (req: Request, res: Response, next: NextFunction) =>
       },
     );
 
-    res.status(201).send({ message: 'Success', data: blog });
+    res.send({ message: 'Success', data: blog });
   } catch (error) {
     res.status(500).send({ message: error });
   }
@@ -90,7 +90,7 @@ export const Delete = async (req: Request, res: Response, next: NextFunction) =>
       },
     });
 
-    res.status(201).send({ message: 'Success', data: blog });
+    res.send({ message: 'Success', data: blog });
   } catch (error) {
     res.status(500).send({ message: error });
   }
@@ -164,7 +164,7 @@ export const List = async (req: Request, res: Response, next: NextFunction) => {
       order: [[sortBy as string, sortAs]],
     });
 
-    res.status(201).send({ message: 'Success', data: jobs, total });
+    res.send({ message: 'Success', data: jobs, total });
   } catch (error) {
     res.status(500).send({ message: error });
   }

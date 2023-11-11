@@ -1,14 +1,13 @@
-import e, { NextFunction, Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { UserJobs } from '../models/UserJobs';
 import { User } from '../models/User';
 import { Job } from '../models/Job';
 import { UserType } from '../types/model-types';
-import { BadRequestError } from '@codelab/api-errors';
+import { BadRequestError } from '../utils/api-errors';
 
 export const Apply = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const {
-      userUniqueId, //uuid
       jobUniqueId, //uuid
     } = req.body;
 
@@ -21,7 +20,7 @@ export const Apply = async (req: Request, res: Response, next: NextFunction) => 
     let userJob;
     const user = await User.scope('withId').findOne({
       where: {
-        uuid: userUniqueId,
+        uuid: req.user.User?.uuid,
       },
     });
     const job = await Job.scope('withId').findOne({
@@ -54,40 +53,70 @@ export const Apply = async (req: Request, res: Response, next: NextFunction) => 
     }
 
     if (userJob) {
-      res.status(201).send({ message: 'Success', data: userJob });
+      res.send({ message: 'Success', data: userJob });
     } else {
       res.status(500).send({ message: 'Internal Server Error' });
     }
   } catch (error: any) {
-    console.log(error);
     res.status(500).send({ message: error });
   }
 };
 
-export const ListAppliedJobs = async (req: Request, res: Response, next: NextFunction) => {
+export const createAdditionalDocuments = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const {
-      uid, //uuid
-    } = req.params;
+      jobUniqueId, //uuid
+    } = req.body;
+
+    if (req.user && req.user.type === UserType.COMPANY) {
+      const err = new BadRequestError('wrong user request');
+      res.status(403).send(err);
+      return;
+    }
+
+    let files: string[] = [];
+    if (req.files && req.files?.length) {
+      let filesArray = req.files as any[];
+      filesArray.forEach((file) => {
+        files.push(`${process.env.API_URL}media/${file.filename}`);
+      });
+    }
 
     let userJob;
     const user = await User.scope('withId').findOne({
       where: {
-        uuid: uid,
+        uuid: req.user.User?.uuid,
       },
     });
-
-    if (user?.id) {
-      userJob = await UserJobs.findAll({
+    const job = await Job.scope('withId').findOne({
+      where: {
+        uuid: jobUniqueId,
+      },
+    });
+    if (user?.id && job?.id) {
+      userJob = await UserJobs.findOne({
         where: {
+          JobId: job?.id,
           UserId: user?.id,
         },
       });
+    } else {
+      const err = new BadRequestError('Wrong User Information');
+      res.status(403).send(err);
+      return;
     }
-
-    res.status(201).send({ message: 'Success', data: userJob?userJob:[] });
+    if (userJob && files.length) {
+      userJob.additionalDocuments = files;
+      await userJob.save();
+      res.status(201).send({ message: 'Success' });
+    } else {
+      res.status(403).send({ message: 'Bad request' });
+    }
   } catch (error: any) {
-    console.log(error);
     res.status(500).send({ message: error });
   }
 };

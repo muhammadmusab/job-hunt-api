@@ -1,7 +1,7 @@
 import { sequelize } from '../config/db';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { UserType, AuthType } from '../types/model-types';
+import { UserType, AuthType, AuthStatus } from '../types/model-types';
 import {
   Model,
   DataTypes,
@@ -39,7 +39,9 @@ interface AuthModel extends Model<InferAttributes<AuthModel>, InferCreationAttri
   UserId?: CreationOptional<number | null>;
   CompanyId?: CreationOptional<number | null>;
   profileImage: CreationOptional<string | null>;
+  coverImage: CreationOptional<string | null>;
   authType?: CreationOptional<AuthType>;
+  status?: CreationOptional<AuthStatus>;
 }
 
 interface IAuthFunctions extends AuthModel {
@@ -72,7 +74,7 @@ export const Auth = sequelize.define<AuthModel & IAuthFunctions>(
       },
     },
     type: {
-      type: DataTypes.ENUM('COMPANY', 'USER'),
+      type: DataTypes.STRING,
       allowNull: false,
     },
     verified: {
@@ -95,9 +97,16 @@ export const Auth = sequelize.define<AuthModel & IAuthFunctions>(
     profileImage: {
       type: DataTypes.STRING,
     },
+    coverImage: {
+      type: DataTypes.STRING,
+    },
     authType: {
       type: DataTypes.STRING,
-      defaultValue: 'CUSTOM',
+      defaultValue: 'custom',
+    },
+    status: {
+      type: DataTypes.STRING,
+      defaultValue: AuthStatus.ACTIVATION_PENDING,
     },
   },
   {
@@ -107,11 +116,11 @@ export const Auth = sequelize.define<AuthModel & IAuthFunctions>(
     scopes: {
       withPassword: {
         attributes: {
-          exclude:[]
+          exclude: [],
         },
       },
       withoutPasswordAndVerified: {
-        attributes: { exclude: ['password','verified'] },
+        attributes: { exclude: ['password', 'verified'] },
       },
       withoutPassword: {
         attributes: { exclude: ['password'] },
@@ -129,19 +138,19 @@ async function generateHash(user: any) {
   }
 }
 
-Auth.afterCreate(hideFields);
-
 async function hideFields(user: any) {
   // as in create function we can't add attributes field so this is alternate solution for create method i.e: to run reload() method in afterCreate hook
   await user.reload();
 }
+// hide fields after create hook
+Auth.afterCreate(hideFields);
 
 Auth.beforeCreate(generateHash);
 Auth.beforeUpdate(generateHash);
 Auth.beforeBulkCreate(generateHash);
 Auth.beforeBulkUpdate(generateHash);
 
-//====== Generate Token
+//====== Generate Mail Token
 Auth.prototype.generateMailToken = async function () {
   const user = this;
 
@@ -191,6 +200,7 @@ Auth.prototype.generateMailToken = async function () {
   }
 };
 
+// ===== Generate Auth Token
 Auth.prototype.generateJWT = function (expiresIn = '15m', tokenType = 'access') {
   const user = this;
   let privateKey = jwtAccessPrivateKey;

@@ -1,28 +1,37 @@
 import { Job } from '../models/Job';
 import { UserJobs } from '../models/UserJobs';
 import { Request, Response, NextFunction } from 'express';
-import { UserType, AuthType } from '../types/model-types';
-import { BadRequestError } from '@codelab/api-errors';
+import {
+  UserType,
+  AuthType,
+  CompanyBasedJobStatus,
+  UserBasedJobStatus,
+} from '../types/model-types';
+import { BadRequestError } from '../utils/api-errors';
 import { getValidUpdates } from '../utils/validate-updates';
 import { getPaginated } from '../utils/paginate';
 import sequelize, { Op } from 'sequelize';
 import { getFiltersAndSearch } from '../utils/QueryFilters';
 import { Filters, operators } from '../types/sequelize-custom-types';
 import { User } from '../models/User';
+import { Company } from '../models/Company';
 
 export const Create = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const {
       title,
-      descriptionShort,
-      descriptionLong,
-      requirements,
-      tags,
-      category,
+      employementType,
+      workLevel,
       expiryDate,
       salary,
+      paymentFrequency,
+      description,
+      requirements,
+      status = 'new', // new || past || interviews
+      tags,
+      openPositions,
+      category,
       experience,
-      employementType,
       projectLength,
       location,
     } = req.body;
@@ -33,25 +42,30 @@ export const Create = async (req: Request, res: Response, next: NextFunction) =>
       return;
     }
 
-    const company = req.user.Company;
+    const { company } = await getCompanyId(req.user.Company?.uuid as string);
 
     const job = await Job.create({
       title,
-      descriptionShort,
-      descriptionLong,
-      requirements,
-      tags,
-      category,
+      employementType,
+      workLevel,
       expiryDate,
       salary,
+      paymentFrequency,
+      description,
+      requirements,
+      status,
+      tags,
+      openPositions,
+      category,
       experience,
-      employementType,
       projectLength,
       location,
       CompanyId: company?.id as number,
     });
 
-    res.status(201).send({ message: 'Success', data: job });
+    const { data } = getData(job);
+
+    res.status(201).send({ message: 'Success', data });
   } catch (error) {
     res.status(500).send({ message: error });
   }
@@ -72,8 +86,10 @@ export const Get = async (req: Request, res: Response, next: NextFunction) => {
       },
     });
 
-    res.status(201).send({ message: 'Success', data: job });
+    const { data } = getData(job);
+    res.send({ message: 'Success', data });
   } catch (error) {
+    console.log(error);
     res.status(500).send({ message: error });
   }
 };
@@ -84,15 +100,18 @@ export const Update = async (req: Request, res: Response, next: NextFunction) =>
 
     const validUpdates = [
       'title',
-      'descriptionShort',
-      'descriptionLong',
-      'requirements',
-      'tags',
-      'category',
+      'employementType',
+      'workLevel',
       'expiryDate',
       'salary',
+      'paymentFrequency',
+      'description',
+      'requirements',
+      'status',
+      'tags',
+      'openPositions',
+      'category',
       'experience',
-      'employementType',
       'projectLength',
       'location',
     ];
@@ -102,18 +121,27 @@ export const Update = async (req: Request, res: Response, next: NextFunction) =>
       const err = new BadRequestError('wrong user request');
       res.status(403).send(err);
     }
-
-    const job = await Job.update(
+    const { company } = await getCompanyId(req.user.Company?.uuid as string);
+    // only the company which added the job can update job info
+    const result = await Job.update(
       { ...validBody },
       {
         where: {
           uuid: uid,
+          CompanyId: company?.id,
         },
       },
     );
+    if (!result[0]) {
+      const err = new BadRequestError('Could not update the job data');
+      res.status(err.status).send({ message: err.message });
+      return;
+    }
 
-    res.status(201).send({ message: 'Success', data: job });
+    res.send({ message: 'Success', data: result });
   } catch (error) {
+    console.log(error);
+
     res.status(500).send({ message: error });
   }
 };
@@ -126,24 +154,251 @@ export const Delete = async (req: Request, res: Response, next: NextFunction) =>
       res.status(403).send(err);
     }
 
-    // const company = req.user.Company;
-
-    const job = await Job.destroy({
+    const { company } = await getCompanyId(req.user.Company?.uuid as string);
+    const result = await Job.destroy({
       where: {
         uuid: uid,
+        CompanyId: company?.id,
       },
     });
 
-    res.status(201).send({ message: 'Success', data: job });
+    if (result === 1) {
+      res.send({ message: 'Success' });
+    } else {
+      const err = new BadRequestError('Job not found');
+      res.status(err.status).send({ message: err.message });
+    }
   } catch (error) {
     res.status(500).send({ message: error });
   }
 };
 
-//job-seeker finding a job
-//company is not allowed to find a job
+// this is active job list route without authentication
+export const ActiveJobsList = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { limit, offset } = getPaginated(req.query);
+    // filters
+    const jobFilters = [
+      {
+        operator: operators.eq,
+        property: 'paymentFrequency',
+        value: req.query.paymentFrequency,
+        type: 'normal',
+      },
+      {
+        operator: operators.eq,
+        property: 'workLevel',
+        value: req.query.workLevel,
+        type: 'normal',
+      },
+      {
+        operator: operators.eq,
+        property: 'experience',
+        value: req.query.experience,
+        type: 'normal',
+      },
+      {
+        operator: operators.eq,
+        property: 'employementType',
+        value: req.query.employementType,
+        type: 'normal',
+      },
+      {
+        operator: operators.eq,
+        property: 'projectLength',
+        value: req.query.projectLength,
+        type: 'normal',
+      },
+      {
+        operator: operators.eq,
+        property: 'location',
+        value: req.query.location,
+        type: 'normal',
+      },
+      {
+        operator: operators.eq,
+        property: 'category',
+        value: req.query.category,
+        type: 'normal',
+      },
+      {
+        operator: operators.gte,
+        property: 'salaryMin',
+        value: req.query.salaryMin,
+        type: 'range',
+        parent: 'salary',
+        parentOperator: operators.and,
+      },
+      {
+        operator: operators.lte,
+        property: 'salaryMax',
+        value: req.query.salaryMax,
+        type: 'range',
+        parent: 'salary',
+        parentOperator: operators.and,
+      },
+      {
+        operator: operators.iLike,
+        property: 'title',
+        value: req.query.search,
+        type: 'search',
+        parentOperator: operators.or,
+      },
+    ] as Filters[];
 
-export const List = async (req: Request, res: Response, next: NextFunction) => {
+    const { filters, search } = getFiltersAndSearch(jobFilters as Filters[]);
+    let where = {
+      status: CompanyBasedJobStatus.NEW,
+    } as any;
+
+
+    if (filters.length) {
+      where = {
+        [Op.and]: [
+          {
+            status: CompanyBasedJobStatus.NEW,
+            //@ts-ignore
+            [Op.and]: filters,
+          },
+        ],
+      };
+    }
+    if (search) {
+      where = {
+        status: CompanyBasedJobStatus.NEW,
+        [Op.and]: [search],
+      };
+    }
+    if (search && filters.length) {
+      where = {
+        status: CompanyBasedJobStatus.NEW,
+        [Op.and]: [
+          {
+            [Op.and]: filters,
+          },
+          search,
+        ],
+      };
+    }
+
+    // sortBy
+    const sortBy = req.query.sortBy ? req.query.sortBy : 'createdAt';
+    const sortAs = req.query.sortAs ? (req.query.sortAs as string) : 'DESC';
+
+    const { count: total, rows: jobs } = await Job.findAndCountAll({
+      where,
+      offset: offset,
+      limit: limit,
+      order: [[sortBy as string, sortAs]],
+    });
+
+    const location = await Job.findAll({
+      attributes: ['location', [sequelize.fn('COUNT', sequelize.col('location')), 'count']],
+      group: ['location'],
+    });
+
+    const salary = await Job.findAll({
+      attributes: [
+        [
+          sequelize.literal(`CASE
+        WHEN salary BETWEEN 100 AND 1000 THEN '100-1000'
+        WHEN salary BETWEEN 1000 AND 3000 THEN '1000-3000'
+        WHEN salary BETWEEN 3000 AND 5000 THEN '3000-5000'
+        WHEN salary BETWEEN 5000 AND 10000 THEN '5000-10000'
+        WHEN salary > 10000 THEN '10000+'
+        ELSE 'Other'
+      END`),
+          'salary_range', // here salary_range is being named instead of salary for the cases above in first argument of this array
+        ],
+        [sequelize.fn('COUNT', 'salary'), 'count'], //this second attribute counts the salary occurences mathching the wher conditions below and also the cases which are above (in the first attribute where cases conditions are being used)
+      ],
+      where: {
+        salary: {
+          [Op.gt]: 100,
+        },
+      },
+      group: ['salary_range'],
+      raw: true,
+    });
+
+    const workLevel = await Job.findAll({
+      attributes: ['workLevel', [sequelize.fn('COUNT', sequelize.col('workLevel')), 'count']],
+      group: ['workLevel'],
+    });
+    const paymentFrequency = await Job.findAll({
+      attributes: [
+        'paymentFrequency',
+        [sequelize.fn('COUNT', sequelize.col('paymentFrequency')), 'count'],
+      ],
+      group: ['paymentFrequency'],
+    });
+    const employementType = await Job.findAll({
+      attributes: [
+        'employementType',
+        [sequelize.fn('COUNT', sequelize.col('employementType')), 'count'],
+      ],
+      group: ['employementType'],
+    });
+    const filtersData = { workLevel, employementType, paymentFrequency, location, salary };
+
+    res.send({ message: 'Success', data: jobs, total, filtersData });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ message: error });
+  }
+};
+
+// List of jobs by the job-seeker(user) without filters
+export const UserBasedJobList = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (req.user && req.user.type === UserType.COMPANY) {
+      const err = new BadRequestError('wrong user request');
+      res.status(403).send(err);
+    }
+
+    //job-status: 'cancelled' || 'applied' || 'interviews'
+    const status: UserBasedJobStatus = req.query.status as UserBasedJobStatus;
+    // sortBy
+    const sortBy = req.query.sortBy ? req.query.sortBy : 'createdAt';
+    const sortAs = req.query.sortAs ? (req.query.sortAs as string) : 'DESC';
+
+    const { limit, offset } = getPaginated(req.query);
+
+    const { user } = await getUserId(req.user.User?.uuid as string);
+
+    // finding job ids with current user
+    const result = await UserJobs.findAll({
+      where: {
+        UserId: user?.id,
+        status,
+      },
+      attributes: ['JobId'],
+    });
+
+    // list of found job ids
+    const foundJobIds = result.map((item) => item.JobId);
+
+    const { count: total, rows: jobs } = await Job.findAndCountAll({
+      where: {
+        id: foundJobIds as number[],
+      },
+      offset: offset,
+      limit: limit,
+      order: [[sortBy as string, sortAs]],
+    });
+
+    res.send({ message: 'Success', data: jobs, total });
+  } catch (error) {
+    res.status(500).send({ message: error });
+  }
+};
+
+// list of jobs by the job-seeker(user) with filters
+export const UserBasedJobListWithFilters = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     if (req.user && req.user.type === UserType.COMPANY) {
       const err = new BadRequestError('wrong user request');
@@ -177,6 +432,12 @@ export const List = async (req: Request, res: Response, next: NextFunction) => {
         operator: operators.eq,
         property: 'location',
         value: req.query.location,
+        type: 'normal',
+      },
+      {
+        operator: operators.eq,
+        property: 'category',
+        value: req.query.category,
         type: 'normal',
       },
       {
@@ -296,8 +557,296 @@ export const List = async (req: Request, res: Response, next: NextFunction) => {
     });
     const filtersData = { experience, employementType };
 
-    res.status(201).send({ message: 'Success', data: jobs, total, filtersData });
+    res.send({ message: 'Success', data: jobs, total, filtersData });
   } catch (error) {
     res.status(500).send({ message: error });
   }
+};
+
+// list of jobs based on status for company with pagination
+export const CompanyBasedJobList = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (req.user && req.user.type === UserType.USER) {
+      const err = new BadRequestError('wrong user request');
+      res.status(403).send(err);
+    }
+
+    const { company } = await getCompanyId(req.user.Company?.uuid as string);
+
+    //job-status: 'new' || 'past' || 'interviews'
+    const status: CompanyBasedJobStatus = req.query.status as CompanyBasedJobStatus;
+    // if user clicks on past tab on FE
+    if (status === 'past') {
+      // get current date
+      const current_date = new Date().toISOString().slice(0, 10);
+      // find jobs (uuids) with current date greater then  expiryDate  (which means job is expired)
+
+      const jobs = await Job.findAll({
+        where: {
+          CompanyId: company?.id,
+          expiryDate: {
+            [Op.lt]: current_date,
+          },
+        },
+        attributes: ['uuid'],
+      });
+      // array of uuids of jobs found with expiry date
+      const jobIds = jobs.map((item) => item.uuid);
+      // updating the status of the jobs with expirydate found above
+      await Job.update(
+        {
+          status: CompanyBasedJobStatus.PAST,
+        },
+        {
+          where: {
+            uuid: jobIds,
+          },
+        },
+      );
+    }
+    // sortBy
+    const sortBy = req.query.sortBy ? req.query.sortBy : 'createdAt';
+    const sortAs = req.query.sortAs ? (req.query.sortAs as string) : 'DESC';
+
+    const { limit, offset } = getPaginated(req.query);
+
+    const { count: total, rows: jobs } = await Job.findAndCountAll({
+      where: {
+        CompanyId: company?.id,
+        status,
+      },
+      attributes:{
+        exclude:['CompanyId','popularity']
+      },
+      offset: offset,
+      limit: limit,
+      order: [[sortBy as string, sortAs]],
+    });
+
+
+    res.send({ message: 'Success', data: jobs, total });
+  } catch (error) {
+    console.log(error)
+    res.status(500).send({ message: error });
+  }
+};
+
+// set job status as 'interviews' from company
+export const UpdateCompanyBasedJobStatus = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    if (req.user && req.user.type === UserType.USER) {
+      const err = new BadRequestError('wrong user request');
+      res.status(403).send(err);
+    }
+    // job uuid
+    const { uid } = req.params;
+    const { company } = await getCompanyId(req.user.Company?.uuid as string);
+
+    const result = await Job.update(
+      {
+        status: CompanyBasedJobStatus.INTERVIEWS,
+      },
+      {
+        where: {
+          uuid: uid,
+          CompanyId: company?.id,
+        },
+      },
+    );
+    if (!result[0]) {
+      const err = new BadRequestError('Could not update the job data');
+      res.status(err.status).send({ message: err.message });
+      return;
+    }
+
+    res.send({ message: 'Success', data: result });
+  } catch (error) {
+    res.status(500).send({ message: error });
+  }
+};
+
+// assign user for job interview and set status of user as interview
+// company will assign this status
+export const AssignUserJobInterview = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (req.user && req.user.type === UserType.USER) {
+      const err = new BadRequestError('wrong user request');
+      res.status(403).send(err);
+    }
+    // job uuid
+
+    const { userUniqueId, jobUniqueId } = req.body;
+    const { user } = await getUserId(userUniqueId);
+
+    const job = await Job.scope('withId').findOne({
+      where: {
+        uuid: jobUniqueId,
+      },
+    });
+
+    if (!job) {
+      const err = new BadRequestError('Job data not found');
+      res.status(err.status).send({ message: err.message });
+      return;
+    }
+
+    const result = await UserJobs.update(
+      {
+        status: CompanyBasedJobStatus.INTERVIEWS,
+      },
+      {
+        where: {
+          JobId: job?.id,
+          UserId: user?.id,
+        },
+      },
+    );
+
+    if (!result[0]) {
+      const err = new BadRequestError('Could not update the job data');
+      res.status(err.status).send({ message: err.message });
+      return;
+    }
+
+    res.send({ message: 'Success', data: result });
+  } catch (error) {
+    res.status(500).send({ message: error });
+  }
+};
+
+// list of jobs with its applicants
+export const UserJobsList = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (req.user && req.user.type === UserType.USER) {
+      const err = new BadRequestError('wrong user request');
+      res.status(403).send(err);
+    }
+
+    // sortBy
+    const sortBy = req.query.sortBy ? req.query.sortBy : 'createdAt';
+    const sortAs = req.query.sortAs ? (req.query.sortAs as string) : 'DESC';
+
+    const { limit, offset } = getPaginated(req.query);
+    const { company } = await getCompanyId(req.user.Company?.uuid as string);
+    const { jobUniqueId } = req.body;
+
+    const job = await Job.scope('withId').findOne({
+      where: {
+        uuid: jobUniqueId,
+      },
+    });
+
+    const { count: total, rows: jobs } = await UserJobs.findAndCountAll({
+      where: {
+        JobId: job?.id,
+      },
+      include: [
+        {
+          model: Job,
+          required: true,
+          where: {
+            CompanyId: company?.id,
+          },
+        },
+        {
+          model: User,
+        },
+      ],
+      attributes: [
+        'Job.id',
+        'User.id',
+        'UserId',
+        'JobId',
+        'id',
+        'CompanyId',
+        'additionalDocuments',
+      ],
+      offset: offset,
+      limit: limit,
+      order: [[sortBy as string, sortAs]],
+    });
+
+    res.send({ message: 'Success', data: jobs, total });
+  } catch (error) {
+    res.status(500).send({ message: error });
+  }
+};
+
+// user will set status as cancel for job user applied
+export const setUserJobStatusCancelled = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    if (req.user && req.user.type === UserType.COMPANY) {
+      const err = new BadRequestError('wrong user request');
+      res.status(403).send(err);
+    }
+    // job uuid
+    const { uid } = req.params;
+    const { user } = await getUserId(req.user.User?.uuid as string);
+
+    const job = await Job.scope('withId').findOne({
+      where: {
+        uuid: uid,
+      },
+    });
+
+    if (!job) {
+      const err = new BadRequestError('Job data not found');
+      res.status(err.status).send({ message: err.message });
+      return;
+    }
+
+    const result = await UserJobs.update(
+      {
+        status: UserBasedJobStatus.CANCELLED,
+      },
+      {
+        where: {
+          JobId: job?.id,
+          UserId: user?.id,
+        },
+      },
+    );
+
+    if (!result[0]) {
+      const err = new BadRequestError('Could not update the job data');
+      res.status(err.status).send({ message: err.message });
+      return;
+    }
+
+    res.send({ message: 'Success', data: result });
+  } catch (error) {
+    res.status(500).send({ message: error });
+  }
+};
+
+const getUserId = async (uuid: string) => {
+  const user = await User.scope('withId').findOne({
+    where: {
+      uuid,
+    },
+    attributes: ['id'],
+  });
+  return { user };
+};
+const getCompanyId = async (uuid: string) => {
+  const company = await Company.scope('withId').findOne({
+    where: {
+      uuid,
+    },
+    attributes: ['id'],
+  });
+  return { company };
+};
+const getData = (instance: any) => {
+  delete instance.dataValues.id;
+  delete instance.dataValues.CompanyId;
+  return { data: instance };
 };

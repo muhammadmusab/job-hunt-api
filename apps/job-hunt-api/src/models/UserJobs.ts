@@ -16,6 +16,7 @@ interface UserJobsModel
   UserId?: CreationOptional<number>;
   JobId?: CreationOptional<number>;
   status: CreationOptional<string>;
+  additionalDocuments?: CreationOptional<string[]>;
 }
 export const UserJobs = sequelize.define<UserJobsModel>(
   'UserJobs',
@@ -29,6 +30,9 @@ export const UserJobs = sequelize.define<UserJobsModel>(
       type: DataTypes.STRING,
       allowNull: false,
       defaultValue: status.APPLIED as string,
+    },
+    additionalDocuments: {
+      type: DataTypes.ARRAY(DataTypes.STRING),
     },
   },
   {

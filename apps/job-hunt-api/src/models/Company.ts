@@ -15,8 +15,12 @@ interface CompanyModel
   vatNumber: string;
   address: string;
   foundationYear: number;
-  email: string;
   contact: string;
+  industry?: string;
+  description?: string;
+  website?: string;
+  numberOfEmployees?: number;
+  hiring?: boolean;
 }
 export const Company = sequelize.define<CompanyModel>(
   'Company',
@@ -30,6 +34,23 @@ export const Company = sequelize.define<CompanyModel>(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    industry: {
+      type: DataTypes.STRING,
+    },
+    description: {
+      type: DataTypes.STRING,
+    },
+    website: {
+      type: DataTypes.STRING,
+    },
+    numberOfEmployees: {
+      type: DataTypes.INTEGER,
+    },
+    hiring: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+
     vatNumber: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -37,14 +58,6 @@ export const Company = sequelize.define<CompanyModel>(
     foundationYear: {
       type: DataTypes.STRING,
       allowNull: false,
-    },
-    email: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      unique: true,
-      validate: {
-        isEmail: true,
-      },
     },
     address: {
       type: DataTypes.STRING,
@@ -60,11 +73,11 @@ export const Company = sequelize.define<CompanyModel>(
       attributes: { exclude: ['id'] },
     },
     scopes: {
-      withId:{
+      withId: {
         attributes: {
-          exclude:[]
+          exclude: [],
         },
-      }
+      },
     },
   },
 );

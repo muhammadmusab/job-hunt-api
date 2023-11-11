@@ -22,7 +22,6 @@ const whitelist = [
 ];
 app.use(cookieParser());
 
-
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin) {
@@ -44,20 +43,26 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-app.use(cors({
-  origin: '*'
-}));
+app.use(
+  cors({
+    origin: '*',
+  }),
+);
 // ASSOCIATIONS
 import './utils/associations';
 app.use('/media', express.static(path.join(__dirname, 'media')));
 
-
 // Routes
 import authRoutes from './routes/auth';
+import companyRoutes from './routes/company';
+import userRoutes from './routes/user';
+import addressRoutes from './routes/address';
 import jobRoutes from './routes/job';
 app.use('/v1/api/auth', authRoutes);
+app.use('/v1/api/company', companyRoutes);
+app.use('/v1/api/user', userRoutes);
+app.use('/v1/api/address', addressRoutes);
 app.use('/v1/api/job', jobRoutes);
-
 
 //Error Handler
 app.use(errorHandler);

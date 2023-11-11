@@ -3,17 +3,24 @@ import { Auth } from '../models/Auth';
 import { MailToken } from '../models/MailToken';
 import { User } from '../models/User';
 import { Company } from '../models/Company';
-import { UserType, AuthType } from '../types/model-types';
+import { UserType, AuthType, AuthStatus } from '../types/model-types';
 
 import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcrypt';
-import { AuthError, BadRequestError, CustomError } from '@codelab/api-errors';
+import { AuthError, BadRequestError, CustomError } from '../utils/api-errors';
 import { generateResetPasswordMail, generateVerificationMail } from '../utils/generate-mail';
 import { verifyDecodedToken } from '../types/general';
 import path from 'path';
 import fs from 'fs';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
+import { UserEducation } from '../models/UserEducation';
+import { UserExperience } from '../models/UserExperience';
+import { UserSkill } from '../models/UserSkill';
+import { UserCertification } from '../models/UserCertification';
+import { CompanySocial } from '../models/CompanySocial';
+import { CompanyContact } from '../models/CompanyContact';
+import { CompanyArea } from '../models/CompanyArea';
 
 const jwtMailPublicKey = fs.readFileSync(
   path.join(__dirname, '../config', 'jwt-mail-public.pem'),
@@ -26,19 +33,18 @@ const jwtRefreshPublicKey = fs.readFileSync(
 // ======Register
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    let { email, contact, password, profileImage = null } = req.body;
+    let { email, contact, password } = req.body;
     // we get query from FE
     const type = req.query.type as UserType;
 
     let user;
     let company;
     let auth;
-    let file=[];
-    if(req.files && req.files?.length){
-      let files=req.files as any;
-      file=files[0];
-    }
-    if (profileImage && file.filename && file.length) {
+    let file = [];
+    let profileImage = null;
+    if (req.files && req.files?.length) {
+      let files = req.files as any;
+      file = files[0];
       profileImage = `${process.env.API_URL}media/${file.filename}`;
     }
 
@@ -54,24 +60,21 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
     }
 
     if (type === UserType.USER) {
-      const { firstName, userName, lastName } = req.body;
+      const { firstName, lastName } = req.body;
 
       user = await User.create({
         firstName,
-        // userName,
         lastName,
         fullName: `${firstName} ${lastName}`,
-        email,
         contact,
       });
     } else if (type === UserType.COMPANY) {
-      const { name, vatNumber, address, foundationYear } = req.body;
+      const { companyName, vatNumber, address, foundationYear } = req.body;
       company = await Company.create({
-        name,
+        name: companyName,
         vatNumber,
         address,
         foundationYear,
-        email,
         contact,
       });
     }
@@ -103,21 +106,22 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
 
     if (auth) {
       const token = await auth.generateMailToken();
+
       await generateVerificationMail(auth.email, token);
+
       res.status(201).send({ message: 'Success', data: auth });
     } else {
       const err = new BadRequestError('Bad Request');
       return next(err);
     }
-  } catch (error) {
-    // next(error);
+  } catch (error: any) {
     res.status(500).send({ message: error });
   }
 };
-export const sendVerificationMail = async (req: Request, res: Response, next: NextFunction) => {
+export const ResendVerificationMail = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    let { email} = req.body;
-    
+    let { email } = req.body;
+
     // check if email exists:
     const existingEmail = await Auth.findOne({
       where: {
@@ -129,15 +133,13 @@ export const sendVerificationMail = async (req: Request, res: Response, next: Ne
       return next(err);
     }
 
-    
-      const token = await existingEmail.generateMailToken();
-      const result=await generateVerificationMail(existingEmail.email, token);
-      let message='Success';
-      if(result.rejected){
-        message="Error, Failed to send an email"
-      }
-      res.status(201).send({ message });
-    
+    const token = await existingEmail.generateMailToken();
+    const result = await generateVerificationMail(existingEmail.email, token);
+    let message = 'Success';
+    if (result.rejected) {
+      message = 'Error, Failed to send an email';
+    }
+    res.send({ message });
   } catch (error) {
     // next(error);
     res.status(500).send({ message: error });
@@ -151,20 +153,17 @@ export const googleSignin = async (req: Request, res: Response, next: NextFuncti
     const type = req.query.type as UserType;
 
     let { contact, profileImage = null, googleToken } = req.body; //for AUTH and general use
-    const { firstName, userName, lastName } = req.body; //for USER
-    const { name, vatNumber, address, foundationYear } = req.body; //for COMPANY
+    const { firstName, lastName } = req.body; //for USER
+    const { companyName, vatNumber, address, foundationYear } = req.body; //for COMPANY
     let company;
     let user;
     let authType = AuthType.SOCIAL;
     let auth;
 
-    let file=[];
-    if(req.files && req.files?.length){
-      let files=req.files as any;
-      file=files[0];
-    }
-
-    if (profileImage && file.length && file.filename ) {
+    let file = [];
+    if (req.files && req.files?.length) {
+      let files = req.files as any;
+      file = files[0];
       profileImage = `${process.env.API_URL}media/${file.filename}`;
     }
 
@@ -193,19 +192,16 @@ export const googleSignin = async (req: Request, res: Response, next: NextFuncti
       if (type === UserType.USER) {
         user = await User.create({
           firstName,
-          // userName,
           lastName,
           fullName: `${firstName} ${lastName}`,
-          email,
           contact,
         });
       } else if (type === UserType.COMPANY) {
         company = await Company.create({
-          name,
+          name: companyName,
           vatNumber,
           address,
           foundationYear,
-          email,
           contact,
         });
       }
@@ -233,14 +229,13 @@ export const googleSignin = async (req: Request, res: Response, next: NextFuncti
 
       const token = await auth.generateMailToken();
       await generateVerificationMail(auth.email, token);
-      res.status(201).send({ message: 'Success', data: auth });
+      res.send({ message: 'Success', data: auth });
       return;
     } else {
       // if auth-user already exists
       if (type === UserType.USER && auth.UserId) {
         user = await User.findOne({
           where: {
-            email,
             id: auth.UserId,
           },
         });
@@ -256,12 +251,11 @@ export const googleSignin = async (req: Request, res: Response, next: NextFuncti
       } else if (type === UserType.COMPANY && auth.CompanyId) {
         company = await Company.findOne({
           where: {
-            email,
             id: auth.CompanyId,
           },
         });
         if (company) {
-          company.name = name ? name : company.name;
+          company.name = companyName ? companyName : company.name;
           company.vatNumber = vatNumber ? vatNumber : company.vatNumber;
           company.address = address ? address : company.address;
           company.foundationYear = foundationYear ? foundationYear : company.foundationYear;
@@ -338,19 +332,20 @@ export const verifyEmailAddress = async (req: Request, res: Response, next: Next
       },
     });
 
-    if (!mailToken) {
+    if (mailToken !== 1) {
       const err = new BadRequestError("Couldn't verify, please try again");
       return next(err);
     }
     auth.verified = true;
+    auth.status = AuthStatus.USER_VERIFIED;
     await auth.save();
 
     res.send({
       message: 'Success',
+      status: auth.status,
     });
   } catch (error) {
     res.status(500).send({ message: error });
-    // next(err);
   }
 };
 
@@ -582,7 +577,7 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
         email: user.email,
       },
     });
-    if (!mailToken) {
+    if (mailToken !== 1) {
       const err = new Error() as CustomError;
       err.message = "Couldn't reset password, please try again";
       err.status = 401;
@@ -591,7 +586,7 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
 
     user.password = password;
     await user.save();
-    res.send({ message: 'Success' });
+    res.send({ message: 'Password updated successfully' });
   } catch (error) {
     console.log(error);
     // next(err);
@@ -620,22 +615,57 @@ export const deleteAccount = async (req: Request, res: Response, next: NextFunct
           AuthId: user.id,
         },
       });
-     await Auth.destroy({
+      await Auth.destroy({
         where: {
           email: user.email,
         },
       });
     }
-    if (user.type === UserType.USER) {
+    if (user.UserId && user.type === UserType.USER) {
       await User.destroy({
         where: {
-          email: user.email,
+          id: user.UserId,
         },
       });
-    } else {
+      await UserEducation.destroy({
+        where: {
+          UserId: user.UserId,
+        },
+      });
+      await UserExperience.destroy({
+        where: {
+          UserId: user.UserId,
+        },
+      });
+      await UserSkill.destroy({
+        where: {
+          UserId: user.UserId,
+        },
+      });
+      await UserCertification.destroy({
+        where: {
+          UserId: user.UserId,
+        },
+      });
+    } else if (user.CompanyId && user.type === UserType.COMPANY) {
       await Company.destroy({
         where: {
-          email: user.email,
+          id: user.CompanyId,
+        },
+      });
+      await CompanySocial.destroy({
+        where: {
+          CompanyId: user.CompanyId,
+        },
+      });
+      await CompanyContact.destroy({
+        where: {
+          CompanyId: user.CompanyId,
+        },
+      });
+      await CompanyArea.destroy({
+        where: {
+          CompanyId: user.CompanyId,
         },
       });
     }

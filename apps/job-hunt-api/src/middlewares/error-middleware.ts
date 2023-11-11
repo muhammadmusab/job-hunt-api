@@ -1,4 +1,4 @@
-import { CustomError } from '@codelab/api-errors';
+import { CustomError } from '../utils/api-errors';
 import { NextFunction, Request, Response } from 'express';
 
 export const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {

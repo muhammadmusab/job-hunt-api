@@ -22,13 +22,26 @@ export const up: Migration = async ({ context }: { context: Sequelize }) => {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    email: {
+    description: {
       type: DataTypes.STRING,
-      allowNull: false,
-      unique: true,
-      validate: {
-        isEmail: true,
-      },
+    },
+    headline: {
+      type: DataTypes.STRING,
+    },
+    portfolioUrl: {
+      type: DataTypes.STRING,
+    },
+    gender: {
+      type: DataTypes.STRING,
+    },
+    dateOfBirth: {
+      type: DataTypes.STRING,
+    },
+    identityType: {
+      type: DataTypes.STRING,
+    },
+    identity: {
+      type: DataTypes.STRING,
     },
     contact: {
       type: DataTypes.STRING,

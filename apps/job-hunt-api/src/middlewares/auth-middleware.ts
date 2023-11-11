@@ -1,4 +1,4 @@
-import { AuthError } from '@codelab/api-errors';
+import { AuthError } from '../utils/api-errors';
 import { verifyDecodedToken } from '../types/general';
 import { UserType } from '../types/model-types';
 import { Request, Response, NextFunction } from 'express';
@@ -14,7 +14,7 @@ const jwtAccessPublicKey = fs.readFileSync(
   path.join(__dirname, '../config', 'access-token.public.pem'),
   'utf8',
 );
-const authMiddleware = () => {
+const authMiddleware = (ignoreExpiration=false) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       let user;
@@ -42,7 +42,7 @@ const authMiddleware = () => {
         audience: process.env.DOMAIN,
         expiresIn: '15m',
         algorithms: [process.env.JWT_HASH_ALGORITHM],
-        // ignoreExpiration: ignoreExpiration,
+        ignoreExpiration: ignoreExpiration,
       };
       const decoded = jwt.verify(
         accessToken,

@@ -63,7 +63,7 @@ export const generateResetPasswordMail = async (email: string, token: string) =>
       subject: 'Password reset',
       template: 'reset-password',
       context: {
-        url: `${process.env.DOMAIN}/auth/reset-pass?token=${token}`,
+        url: `${process.env.DOMAIN}/auth/reset-password?token=${token}`,
       },
     };
    

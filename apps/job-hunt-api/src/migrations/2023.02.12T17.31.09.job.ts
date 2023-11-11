@@ -18,16 +18,41 @@ export const up: Migration = async ({ context }: { context: Sequelize }) => {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    descriptionShort: {
+    employementType: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    descriptionLong: {
+    workLevel: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    expiryDate: {
+      type: DataTypes.DATEONLY,
+      allowNull: false,
+    },
+    salary: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+    },
+    paymentFrequency: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    description: {
       type: DataTypes.TEXT,
+      allowNull: false,
     },
     requirements: {
-      type: DataTypes.ARRAY(DataTypes.STRING),
+      type: DataTypes.TEXT,
       allowNull: false,
+    },
+    openPositions: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    status: {
+      type: DataTypes.STRING,
+      defaultValue:'new'
     },
     tags: {
       type: DataTypes.ARRAY(DataTypes.STRING),
@@ -37,29 +62,23 @@ export const up: Migration = async ({ context }: { context: Sequelize }) => {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    expiryDate:{
-      type:DataTypes.DATE,
-      allowNull:false
+
+    experience: {
+      type: DataTypes.STRING,
+      allowNull: false,
     },
-    salary:{
-      type:DataTypes.FLOAT,
-      allowNull:false
+
+    projectLength: {
+      type: DataTypes.STRING,
+      allowNull: false,
     },
-    experience:{
-      type:DataTypes.STRING,
-      allowNull:false
+    location: {
+      type: DataTypes.STRING,
+      allowNull: false,
     },
-    employementType:{
-      type:DataTypes.STRING,
-      allowNull:false
-    },
-    projectLength:{
-      type:DataTypes.STRING,
-      allowNull:false
-    },
-    location:{
-      type:DataTypes.STRING,
-      allowNull:false
+    popularity: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
     },
     CompanyId: {
       type: DataTypes.INTEGER,

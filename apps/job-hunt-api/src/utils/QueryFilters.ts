@@ -1,4 +1,4 @@
-import { Filters, operators } from '../types/sequelize-custom-types';
+import { Filters } from '../types/sequelize-custom-types';
 
 export const getFiltersAndSearch = (filterArray: Filters[]) => {
   let filters = [] as any;
@@ -30,10 +30,11 @@ export const getFiltersAndSearch = (filterArray: Filters[]) => {
                   [parentPropertyKey]: {
                     [parentOperatorKey]: {
                       ...item[filter.parent][filter.parentOperator as string],
-                      [filter.operator]: filter.value,
+                      [filter.operator]: +filter.value,
                     },
                   },
                 };
+                console.log(item)
                 return item;
               }
             }
