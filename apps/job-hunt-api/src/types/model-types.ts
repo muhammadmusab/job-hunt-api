@@ -8,6 +8,11 @@ export enum UserBasedJobStatus {
   APPLIED = 'applied',
   INTERVIEWS = 'interviews',
 }
+export enum paymentFrequency {
+  HOUR = 'per hour',
+  WEEK = 'per week',
+  MONTH = 'per month',
+}
 
 export enum socialplatformType {
   FACEBOOK = 'facebook',
@@ -47,7 +52,11 @@ export enum AuthType {
   SOCIAL = 'social',
   CUSTOM = 'custom',
 }
-
+export enum JobWorkLevel{
+  ENTRY_LEVEL='entry Level',
+  INTERMEDIATE='intermediate',
+  EXPERT='expert',
+}
 export interface UserData {
   id?: number;
   firstName: string;
